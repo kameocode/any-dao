@@ -2,6 +2,7 @@ package com.kameo.jpasugar.context
 
 
 import com.kameo.jpasugar.ISugarQuerySelect
+import com.kameo.jpasugar.Root
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import javax.persistence.EntityManager
@@ -25,23 +26,23 @@ class QueryPathContext<G>(clz: Class<*>,
     }
 
 
-    fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
-        selector = query.invoke(rootWrap as RootWrap<E, E>)
+    fun <RESULT, E> invokeQuery(query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
+        selector = query.invoke(rootWrap as Root<E>, rootWrap as Root<E>)
         val sell = selector!!.getSelection()
-        val ss = criteria.select(sell as Selection<out G>).distinct(selector!!.isDistinct())
+        criteria.select(sell as Selection<out G>).distinct(selector!!.isDistinct())
 
         val groupBy = getGroupBy()
         if (groupBy.isNotEmpty()) {
             criteria.groupBy(groupBy.map { it.getExpression() })
         }
-
-
         return calculateWhere(em) as TypedQuery<RESULT>
     }
 
 
-    fun calculateWhere(em: EntityManager): TypedQuery<*> {
-        criteria.where(getPredicate())
+    private fun calculateWhere(em: EntityManager): TypedQuery<*> {
+        getPredicate()?.let {
+            criteria.where(it)
+        }
         if (orders.isNotEmpty())
             criteria.orderBy(orders)
         val jpaQuery = em.createQuery(criteria)

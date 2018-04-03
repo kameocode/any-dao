@@ -25,6 +25,8 @@ class DeletePathContext<G>(clz: Class<*>,
     }
 
     private fun calculateWhere(cq: CriteriaDelete<*>) {
-        cq.where(getPredicate())
+        getPredicate()?.let {
+            cq.where(it)
+        }
     }
 }

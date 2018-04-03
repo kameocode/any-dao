@@ -18,10 +18,9 @@ constructor(
 
     val cb: CriteriaBuilder = em.criteriaBuilder
     val orders: MutableList<Order> = mutableListOf()
-    val arraysStack: MutableList<MutableList<() -> Predicate?>> = mutableListOf()
-
+    private val arraysStack: MutableList<MutableList<() -> Predicate?>> = mutableListOf()
     private var currentArray: MutableList<() -> Predicate?> = mutableListOf()
-        private set
+
     var skip: Int? = null
     var take: Int? = null
 
@@ -63,13 +62,10 @@ constructor(
             null
     }
 
-    private fun toPredicates(list: MutableList<() -> Predicate?>): MutableList<Predicate> {
-        val predicates = list
-                .asSequence()
-                .mapNotNull { it.invoke() }
-                .toMutableList()
-        return predicates
-    }
+    private fun toPredicates(list: MutableList<() -> Predicate?>) =
+            list.asSequence()
+                    .mapNotNull { it.invoke() }
+                    .toMutableList()
 
     fun mergeLevelUpAsOr() {
         val temp = currentArray
@@ -108,14 +104,14 @@ constructor(
     }
 
 
-    fun getPredicate(): Predicate {
+    fun getPredicate(): Predicate? {
         if (arraysStack.isNotEmpty())
             throw IllegalArgumentException("In or Or clause has not been closed")
         val predicates = currentArray.mapNotNull { it.invoke() }
-        if (predicates.size == 1) {
-            return predicates[0]
-        } else {
-            return cb.and(*predicates.toTypedArray())
+        return when {
+            predicates.isEmpty() -> null
+            predicates.size == 1 -> predicates[0]
+            else -> cb.and(*predicates.toTypedArray())
         }
     }
 

@@ -5,9 +5,9 @@
     <persistence-unit name="test-pu">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <class>com.kameo.jpasugar.test.data.UserODB</class>
-        <class>com.kameo.jpasugar.test.data.TaskODB</class>
-        <class>com.kameo.jpasugar.test.data.AddressODB</class>
+        <class>com.kameo.jpasugar.test.helpers.UserODB</class>
+        <class>com.kameo.jpasugar.test.helpers.TaskODB</class>
+        <class>com.kameo.jpasugar.test.helpers.AddressODB</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
             <property name="hibernate.connection.driver_class" value="org.h2.Driver" />

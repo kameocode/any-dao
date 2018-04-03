@@ -14,9 +14,9 @@ open class RootWrap<E, G> constructor(
         val pw: PathContext<G>,
         root: Root<E>) : PathWrap<E, G>(pw, root) {
 
-    override val it: RootWrap<E, G> by lazy {
+  /*  override val it: RootWrap<E, G> by lazy {
         this
-    }
+    }*/
 
     @Suppress("UNCHECKED_CAST")
     fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType? = JoinType.INNER): JoinWrap<F, G> {
@@ -25,11 +25,11 @@ open class RootWrap<E, G> constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType = JoinType.INNER, andClause: (JoinWrap<F, G>) -> Unit): JoinWrap<F, G> {
+    fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType = JoinType.INNER, andClause: JoinWrap<F, G>.(JoinWrap<F, G>) -> Unit): JoinWrap<F, G> {
         val join = (root as From<Any, E>).join<E, F>(sa.name, joinType) as Join<Any, F>
         val jw = JoinWrap(pw, join)
         jw.newAnd();
-        andClause.invoke(jw);
+        andClause.invoke(jw, jw);
         jw.finishClause();
         return jw;
     }

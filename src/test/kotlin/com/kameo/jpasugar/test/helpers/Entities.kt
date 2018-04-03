@@ -1,4 +1,4 @@
-package com.kameo.jpasugar.test.data;
+package com.kameo.jpasugar.test.helpers;
 
 import javax.persistence.CascadeType
 import javax.persistence.Entity
@@ -25,7 +25,7 @@ data class UserODB(@Id
                    @OneToMany(cascade = [CascadeType.ALL])
                    var allTasks: List<TaskODB> = emptyList()
 
-                   ) {
+) {
 
     var login: String? = null
 
@@ -34,8 +34,8 @@ data class UserODB(@Id
 
 @Entity
 data class AddressODB(@Id
-                   @GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
-                   val id: Long = 0, val city: String);
+                      @GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
+                      val id: Long = 0, val city: String);
 
 @Entity
 data class TaskODB(@Id

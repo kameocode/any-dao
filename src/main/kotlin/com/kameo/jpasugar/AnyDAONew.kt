@@ -62,25 +62,25 @@ class AnyDAONew(val em: EntityManager) {
     }
 
 
-    fun <E : Any, RESULT : Any> all(clz: Class<E>, resultClass: Class<RESULT>, query: Root<E>.() -> ISugarQuerySelect<RESULT>): List<RESULT> {
+    fun <E : Any, RESULT : Any> all(clz: Class<E>, resultClass: Class<RESULT>, query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): List<RESULT> {
         val pc = QueryPathContext<RESULT>(clz, em)
         val res = pc.invokeQuery(query).resultList
         return pc.mapToPluralsIfNeeded<RESULT>(res)
     }
 
-    fun <E : Any, RESULT : Any> one(clz: Class<E>, resultClass: Class<RESULT>, query: Root<E>.() -> ISugarQuerySelect<RESULT>): RESULT {
+    fun <E : Any, RESULT : Any> one(clz: Class<E>, resultClass: Class<RESULT>, query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): RESULT {
         val pc = QueryPathContext<RESULT>(clz, em)
         val jpaQuery = pc.invokeQuery(query)
         jpaQuery.maxResults = 1
         return pc.mapToPluralsIfNeeded<RESULT>(jpaQuery.singleResult)
     }
 
-    inline fun <E : Any, reified RESULT : Any> one(clz: KClass<E>, noinline query: Root<E>.() -> ISugarQuerySelect<RESULT>): RESULT {
+    inline fun <E : Any, reified RESULT : Any> one(clz: KClass<E>, noinline query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): RESULT {
         return one(clz.java, RESULT::class.java, query)
     }
 
 
-    fun <E : Any, RESULT : Any> getFirst(clz: Class<E>, resultClass: Class<RESULT>, query: Root<E>.() -> ISugarQuerySelect<RESULT>): RESULT? {
+    fun <E : Any, RESULT : Any> getFirst(clz: Class<E>, resultClass: Class<RESULT>, query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
         val pc = QueryPathContext<RESULT>(clz, em)
         val jpaQuery = pc.invokeQuery(query)
         jpaQuery.maxResults = 1
@@ -98,9 +98,9 @@ class AnyDAONew(val em: EntityManager) {
         return pc.invokeDelete(query).executeUpdate()
     }
 
-    fun <E : Any> exists(clz: Class<E>, query: Root<E>.() -> ISugarQuerySelect<*>): Boolean {
-        val queryExists: (RootWrap<E, E>) -> ISugarQuerySelect<Long> = {
-            val invoke: ISugarQuerySelect<*> = query.invoke(it)
+    fun <E : Any> exists(clz: Class<E>, query: Root<E>.(Root<E>) -> ISugarQuerySelect<*>): Boolean {
+        val queryExists: Root<E>.(Root<E>) -> ISugarQuerySelect<Long> = {
+            val invoke: ISugarQuerySelect<*> = query.invoke(it, it)
             it.select(ExpressionWrap(it.pc, em.criteriaBuilder.count(invoke.getSelection() as Expression<*>)))
         }
         return one(clz, Long::class.java, queryExists) > 0
@@ -113,14 +113,16 @@ class AnyDAONew(val em: EntityManager) {
         return res.first()
     }
 
-    fun <E : Any> exists(clz: KClass<E>, query: Root<E>.() -> ISugarQuerySelect<*>): Boolean {
+    fun <E : Any> exists(clz: KClass<E>, query: Root<E>.(Root<E>) -> ISugarQuerySelect<*>): Boolean {
         return exists(clz.java, query)
     }
 
-
-    inline fun <E : Any> count(clz: KClass<E>, noinline query: Root<E>.() -> Unit): Long {
-        val wrapperQuery: Root<E>.() -> (ISugarQuerySelect<Long>) = {
-            query.invoke(this);
+    fun <E : Any> count(clz: KClass<E>): Long {
+        return count(clz, {})
+    }
+    fun <E : Any> count(clz: KClass<E>, query: Root<E>.(Root<E>) -> Unit): Long {
+        val wrapperQuery: Root<E>.(Root<E>) -> (ISugarQuerySelect<Long>) = {
+            query.invoke(this, this);
            it.select(it.count())
         }
         return one(clz.java, Long::class.java, wrapperQuery)
@@ -128,16 +130,16 @@ class AnyDAONew(val em: EntityManager) {
 
 
 
-    inline fun <E : Any, reified RESULT : Any> getFirst(clz: KClass<E>, noinline query: Root<E>.() -> ISugarQuerySelect<RESULT>): RESULT? {
+    inline fun <E : Any, reified RESULT : Any> getFirst(clz: KClass<E>, noinline query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
         return getFirst(clz.java, RESULT::class.java, query)
     }
 
-    inline fun <E : Any, reified RESULT : Any> getFirst2(clz: KClass<E>, noinline query: Root<E>.() -> ISugarQuerySelect<RESULT>): RESULT? {
+    inline fun <E : Any, reified RESULT : Any> getFirst2(clz: KClass<E>, noinline query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
         return getFirst(clz.java, RESULT::class.java, query)
     }
 
 
-    inline fun <E : Any, reified RESULT : Any> allMutable(clz: KClass<E>, noinline query: Root<E>.() -> ISugarQuerySelect<RESULT>): MutableList<RESULT> {
+    inline fun <E : Any, reified RESULT : Any> allMutable(clz: KClass<E>, noinline query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): MutableList<RESULT> {
         return all(clz.java, RESULT::class.java, query) as MutableList<RESULT>
     }
 
@@ -145,13 +147,13 @@ class AnyDAONew(val em: EntityManager) {
         return all(clz, { this });
     }
 
-    inline fun <E : Any, reified RESULT : Any> all(clz: KClass<E>, noinline query: Root<E>.() -> (ISugarQuerySelect<RESULT>)): List<RESULT> {
+    inline fun <E : Any, reified RESULT : Any> all(clz: KClass<E>, noinline query: Root<E>.(Root<E>) -> (ISugarQuerySelect<RESULT>)): List<RESULT> {
         return all(clz.java, RESULT::class.java, query)
     }
 
 
     inline fun <E : Any, reified RESULT : Any> pages(clz: KClass<E>, page: Page,
-                                                     noinline query: Root<E>.() -> ISugarQuerySelect<RESULT>
+                                                     noinline query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>
     ): PagesResult<RESULT> {
 
         return object : PagesResult<RESULT>(page.pageSize) {
@@ -169,10 +171,10 @@ class AnyDAONew(val em: EntityManager) {
 
 
     inline fun <E : Any, reified RESULT : Any> page(clz: KClass<E>, page: Page,
-                                                    noinline query: Root<E>.() -> ISugarQuerySelect<RESULT>): List<RESULT> {
+                                                    noinline query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): List<RESULT> {
 
-        val wrapperQuery: Root<E>.() -> (ISugarQuerySelect<RESULT>) = {
-            val result = query.invoke(this);
+        val wrapperQuery: Root<E>.(Root<E>) -> (ISugarQuerySelect<RESULT>) = {
+            val result = query.invoke(this, this);
             this.limit(page.pageSize);
             this.skip(page.offset)
             result;

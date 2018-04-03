@@ -17,9 +17,9 @@ open class ExpressionWrap<E, G> constructor(
         IExpression<E, G> {
 
 
-    open val it: ExpressionWrap<E, G> by lazy {
+ /*   open val it: ExpressionWrap<E, G> by lazy {
         this
-    }
+    }*/
 
     override fun getSelection(): Selection<*> {
         return pc.defaultSelection!!.getSelection()

@@ -6,11 +6,9 @@ import com.kameo.jpasugar.wraps.ExpressionWrap
 import com.kameo.jpasugar.wraps.PathWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import com.kameo.jpasugar.wraps.StringExpressionWrap
+import org.junit.Test
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Selection
-import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KMutableProperty1.Setter
-import kotlin.reflect.KProperty1
 
 
 interface IExpression<F, G> {
@@ -30,13 +28,14 @@ class NumberExpressionWrap<F, G> constructor(
         pc: PathContext<G>,
         value: Expression<F>) : ComparableExpressionWrap<F, G>(pc, value) where F : Number, F : Comparable<F>
 
+/*
 public class FakeMutable<T, R>(prop: KProperty1<T, R>) : KProperty1<T, R> by prop, KMutableProperty1<T, R> {
     override fun set(receiver: T, value: R) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
     }
 
     override val setter: Setter<T, R>
-        get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
 
 }
 
@@ -55,7 +54,7 @@ operator fun <E, G, R> PathWrap<E, G>.minus(foo: KProperty1<E, R?>): PathWrap<R?
         pw.get(foo);
     else
         pw.get(FakeMutable(foo));
-}
+}*/
 
 /*operator infix fun <E: Any?, G, R> PathWrap<E, G>.get(foo: KProperty1<E, R?>): PathWrap<R, G>  {
     val pw = this;

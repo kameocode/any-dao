@@ -1,26 +1,16 @@
 package com.kameo.jpasugar.test
 
-import com.kameo.jpasugar.wraps.and
-import com.kameo.jpasugar.wraps.or
-import com.kameo.jpasugar.AnyDAONew
 import com.kameo.jpasugar.Page
-import com.kameo.jpasugar.test.data.AddressODB
-import com.kameo.jpasugar.test.data.TaskODB
-import com.kameo.jpasugar.test.data.UserODB
+import com.kameo.jpasugar.test.helpers.BaseTest
+import com.kameo.jpasugar.test.helpers.TaskODB
+import com.kameo.jpasugar.test.helpers.UserODB
 import org.junit.Assert
 import org.junit.Test
-import javax.persistence.EntityManager
-import javax.persistence.Persistence
-import javax.persistence.criteria.JoinType
 
-
-class PagesTest {
-    private val em: EntityManager = Persistence.createEntityManagerFactory("test-pu").createEntityManager()
-    private val anyDao = AnyDAONew(em)
+class PagesTest : BaseTest() {
 
     @Test
-    fun testPages() {
-        em.transaction.begin()
+    fun `should return paged results`() {
 
         for (i in 1..19) {
             anyDao.persist(UserODB(email = "email$i", task = TaskODB(name = "task$i")))
@@ -74,7 +64,5 @@ class PagesTest {
         sup5.forEachFlatUntil { chunkSizes5.add(1); chunkSizes5.size < 2 }
         Assert.assertEquals(listOf(1, 1), chunkSizes5)
 
-
-        em.transaction.rollback()
     }
 }

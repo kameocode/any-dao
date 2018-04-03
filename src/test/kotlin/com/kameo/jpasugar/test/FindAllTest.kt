@@ -1,37 +1,19 @@
 package com.kameo.jpasugar.test
 
-import com.kameo.jpasugar.AnyDAONew
-import com.kameo.jpasugar.test.data.AddressODB
-import com.kameo.jpasugar.test.data.TaskODB
-import com.kameo.jpasugar.test.data.UserODB
+import com.kameo.jpasugar.test.helpers.AddressODB
+import com.kameo.jpasugar.test.helpers.BaseTest
+import com.kameo.jpasugar.test.helpers.TaskODB
+import com.kameo.jpasugar.test.helpers.UserODB
 import com.kameo.jpasugar.wraps.and
 import com.kameo.jpasugar.wraps.or
-import org.junit.After
 import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
-import javax.persistence.EntityManager
-import javax.persistence.Persistence
 
 
-class FindAllTest {
-
-    private val em: EntityManager = Persistence.createEntityManagerFactory("test-pu").createEntityManager()
-    private val anyDao = AnyDAONew(em)
-
-    @Before
-    fun before() {
-        em.transaction.begin()
-    }
-
-    @After
-    fun after() {
-        em.transaction.rollback()
-    }
-
+class FindAllTest : BaseTest() {
 
     @Test
-    fun testAll() {
+    fun `should execute simple all queries`() {
 
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
@@ -40,12 +22,12 @@ class FindAllTest {
 
 
         val resAll = anyDao.all(UserODB::class)
-        val res0 = anyDao.all(UserODB::class, { it.get(UserODB::email).eq("email0") })
+        val res0 = anyDao.all(UserODB::class, { it[UserODB::email].eq("email0") })
         Assert.assertEquals(3, resAll.size)
         Assert.assertEquals(0, res0.size)
 
 
-        val res1 = anyDao.all(UserODB::class, { it.get(UserODB::email).eq("email1") })
+        val res1 = anyDao.all(UserODB::class, { it[UserODB::email].eq("email1") })
         val res1a = anyDao.all(UserODB::class) { it[UserODB::task, TaskODB::name] eq "task1" }
         val res1b = anyDao.all(UserODB::class) { it[UserODB::task, TaskODB::name] eq "task5" }
         Assert.assertEquals(1, res1.size)
@@ -90,31 +72,31 @@ class FindAllTest {
 
 
     @Test
-    fun testAllMapped() {
+    fun `should return different type than query root`() {
 
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
         val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
         anyDao.persist(u1, u2, u3)
 
-        val res6_1: List<TaskODB> = anyDao.all(UserODB::class) {
+        val res: List<TaskODB> = anyDao.all(UserODB::class) {
             it get UserODB::task get TaskODB::name eq "task1"
             it select UserODB::task
         }
-        Assert.assertEquals("Should return list of tasks with one entry", 1, res6_1.size)
+        Assert.assertEquals("Should return list of tasks with one entry", 1, res.size)
 
 
-        val res6_1_1: List<String> = anyDao.all(UserODB::class) {
+        val res2: List<String> = anyDao.all(UserODB::class) {
             it get UserODB::task get TaskODB::name eq "task1"
             it select it[UserODB::task, TaskODB::name]
         }
-        Assert.assertEquals("Should return list of strings with one entry", "task1", res6_1_1[0])
+        Assert.assertEquals("Should return list of strings with one entry", "task1", res2[0])
 
 
     }
 
     @Test
-    fun testAllMutable() {
+    fun `should return mutable list`() {
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
         val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
@@ -139,12 +121,12 @@ class FindAllTest {
 
 
     @Test
-    fun testCount() {
+    fun `should return count`() {
 
-        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
-        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
-        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
-        anyDao.persist(u1, u2, u3)
+        anyDao.persist(
+                UserODB(email = "email1", task = TaskODB(name = "task1")),
+                UserODB(email = "email2", task = TaskODB(name = "task2")),
+                UserODB(email = "email3", task = TaskODB(name = "task3")))
 
         val count = anyDao.one(UserODB::class) {
             it[UserODB::task, TaskODB::name] or {
@@ -165,11 +147,12 @@ class FindAllTest {
     }
 
     @Test
-    fun testMaxId() {
-        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
-        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
-        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
-        anyDao.persist(u1, u2, u3)
+    fun `should return max id`() {
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "t2"))
+        anyDao.persist(
+                UserODB(email = "email1", task = TaskODB(name = "t1")),
+                UserODB(email = "email2", task = TaskODB(name = "t1")),
+                u3)
 
         val max = anyDao.one(UserODB::class) {
             it.select(it.max(UserODB::id))
@@ -179,11 +162,11 @@ class FindAllTest {
 
 
     @Test
-    fun testMultiselect() {
-        val u1 = UserODB(email = "email1", task = TaskODB(name = "t1"))
-        val u2 = UserODB(email = "email2", task = TaskODB(name = "t1"))
-        val u3 = UserODB(email = "email3", task = TaskODB(name = "t2"))
-        anyDao.persist(u1, u2, u3)
+    fun `should return multiselect`() {
+        anyDao.persist(
+                UserODB(email = "email1", task = TaskODB(name = "t1")),
+                UserODB(email = "email2", task = TaskODB(name = "t1")),
+                UserODB(email = "email3", task = TaskODB(name = "t2")))
 
         val res: List<Triple<String, Long, Long>> = anyDao.all(UserODB::class) {
             val taskName = it[UserODB::task, TaskODB::name]
@@ -199,7 +182,7 @@ class FindAllTest {
             it.select(it, it.max(UserODB::id))
         }
         Assert.assertEquals(3, res2.size)
-        res2.forEach {(user, maxUserId)->
+        res2.forEach { (user, maxUserId) ->
             Assert.assertEquals(user.id, maxUserId)
         }
     }

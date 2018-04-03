@@ -1,25 +1,20 @@
 package com.kameo.jpasugar.test
 
+import com.kameo.jpasugar.test.helpers.AddressODB
+import com.kameo.jpasugar.test.helpers.BaseTest
+import com.kameo.jpasugar.test.helpers.TaskODB
+import com.kameo.jpasugar.test.helpers.UserODB
 import com.kameo.jpasugar.wraps.and
 import com.kameo.jpasugar.wraps.or
-import com.kameo.jpasugar.AnyDAONew
-import com.kameo.jpasugar.test.data.AddressODB
-import com.kameo.jpasugar.test.data.TaskODB
-import com.kameo.jpasugar.test.data.UserODB
 import org.junit.Assert
 import org.junit.Test
-import javax.persistence.EntityManager
-import javax.persistence.Persistence
 import javax.persistence.criteria.JoinType
 
 
-class JoinsTest {
-    private val em: EntityManager = Persistence.createEntityManagerFactory("test-pu").createEntityManager()
-    private val anyDao = AnyDAONew(em)
+class JoinsTest : BaseTest() {
 
     @Test
-    fun testLeftJoin() {
-        em.transaction.begin()
+    fun `should execute query with left join`() {
 
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), address = AddressODB(city = "Cracow"))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), address = AddressODB(city = "Warsaw"))
@@ -69,12 +64,10 @@ class JoinsTest {
         }
         Assert.assertEquals(1, res1d.size)
 
-        em.transaction.rollback()
     }
 
     @Test
-    fun testJoinList() {
-        em.transaction.begin()
+    fun `should execute query with left join to @OneToMany`() {
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), allTasks = listOf(TaskODB(name = "task1a"), TaskODB(name = "task1b")))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), address = AddressODB(city = "Warsaw"),
                 allTasks = listOf(TaskODB(name = "task2a"), TaskODB(name = "task2b")))
@@ -98,7 +91,6 @@ class JoinsTest {
         }
         Assert.assertEquals(0, res2.size)
 
-        em.transaction.rollback()
 
     }
 }

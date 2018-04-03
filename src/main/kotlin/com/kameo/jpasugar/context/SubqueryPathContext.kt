@@ -25,15 +25,16 @@ class SubqueryPathContext<G>(clz: Class<*>,
     }
 
     //TODO execute from QueryPathContext
-    fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>) -> ISugarQuerySelect<RESULT>): SubqueryWrap<RESULT, E> {
-        selector = query.invoke(rootWrap as RootWrap<E, E>)
+    fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>).(RootWrap<E, E>) -> ISugarQuerySelect<RESULT>): SubqueryWrap<RESULT, E> {
+        selector = query.invoke(rootWrap as RootWrap<E, E>, rootWrap as RootWrap<E, E>);
         val sell = selector!!.getSelection()
         val ss = subquery.select(sell as Expression<G>).distinct(selector!!.isDistinct())
 
 
 
-
-        subquery.where(getPredicate())
+        getPredicate()?.let {
+            subquery.where(it)
+        }
         val groupBy = getGroupBy()
         if (groupBy.isNotEmpty()) {
             subquery.groupBy(groupBy.map { it.getExpression() })

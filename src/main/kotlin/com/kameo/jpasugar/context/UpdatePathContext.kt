@@ -24,6 +24,8 @@ class UpdatePathContext<G>(clz: Class<*>,
     }
 
     private fun calculateWhere(cq: CriteriaUpdate<*>) {
-        cq.where(getPredicate())
+        getPredicate()?.let {
+            cq.where(it)
+        }
     }
 }

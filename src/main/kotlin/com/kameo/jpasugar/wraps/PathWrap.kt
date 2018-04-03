@@ -5,6 +5,7 @@ import com.kameo.jpasugar.AnyDAONew
 import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.ISelectExpressionProvider
 import com.kameo.jpasugar.ISugarQuerySelect
+import com.kameo.jpasugar.Root
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
 import com.kameo.jpasugar.context.QueryPathContext
@@ -28,9 +29,9 @@ open class PathWrap<E, G> constructor(
         pc: PathContext<G>,
         open val root: Path<E>
 ) : ExpressionWrap<E, G>(pc, root) {
-    override val it: PathWrap<E, G> by lazy {
+   /* override val it: PathWrap<E, G> by lazy {
         this
-    }
+    }*/
 
     infix fun groupBy(expr: KProperty1<E, *>) {
         return pc.groupBy(arrayOf(ExpressionWrap<E, G>(pc, root.get(expr.name))))
@@ -141,20 +142,20 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    fun internalOr(orClause: (PathWrap<E, G>) -> Unit): PathWrap<E, G> {
+    fun internalOr(orClause: PathWrap<E, G>.(PathWrap<E, G>) -> Unit): PathWrap<E, G> {
         val list = mutableListOf<() -> Predicate?>()
         pc.add({ calculateOr(list) })
         pc.stackNewArray(list)
-        orClause.invoke(this)
+        orClause.invoke(this, this)
         pc.unstackArray()
         return this
     }
 
-    fun internalAnd(orClause: (PathWrap<E, G>) -> Unit): PathWrap<E, G> {
+    fun internalAnd(orClause: PathWrap<E, G>.(PathWrap<E, G>) -> Unit): PathWrap<E, G> {
         val list = mutableListOf<() -> Predicate?>()
         pc.add({ calculateAnd(list) })
         pc.stackNewArray(list)
-        orClause.invoke(this)
+        orClause.invoke(this, this)
         pc.unstackArray()
         return this
     }
@@ -207,18 +208,18 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun like(sa: KMutableProperty1<E, String>, f: String): PathWrap<E, G> {
+    fun like(sa: KProperty1<E, String>, f: String): PathWrap<E, G> {
         pc.add { cb.like(root.get<Path<String>>(sa.name) as (Expression<String>), f) }
         return this
     }
 
-    fun <F> eq(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F> eq(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.equal(root.get<Path<F>>(sa.name), f) })
         return this
     }
 
 
-    fun <F> eqId(sa: KMutableProperty1<E, F>, id: Long): PathWrap<E, G> {
+    fun <F> eqId(sa: KProperty1<E, F>, id: Long): PathWrap<E, G> {
         pc.add({ cb.equal(root.get<Path<F>>(sa.name).get<Long>("id"), id) })
         return this
     }
@@ -229,7 +230,7 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun <F> notEq(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F> notEq(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.notEqual(root.get<F>(sa.name), f) })
         return this
     }
@@ -244,62 +245,62 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun <F : Comparable<F>> after(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F : Comparable<F>> after(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.greaterThan(root.get(sa.name), f) })
         return this
     }
 
-    fun <F : Comparable<F>> greaterThan(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F : Comparable<F>> greaterThan(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.greaterThan(root.get(sa.name), f) })
         return this
     }
 
-    fun <F : Comparable<F>> greaterThanOrEqualTo(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F : Comparable<F>> greaterThanOrEqualTo(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.greaterThanOrEqualTo(root.get(sa.name), f) })
         return this
     }
 
 
-    fun <F : Comparable<F>> lessThan(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F : Comparable<F>> lessThan(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.lessThan(root.get(sa.name), f) })
         return this
     }
 
-    fun <F : Comparable<F>> lessThanOrEqualTo(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F : Comparable<F>> lessThanOrEqualTo(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.lessThanOrEqualTo(root.get(sa.name), f) })
         return this
     }
 
-    fun <F : Comparable<F>> before(sa: KMutableProperty1<E, F>, f: F): PathWrap<E, G> {
+    fun <F : Comparable<F>> before(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
         pc.add({ cb.lessThan(root.get(sa.name), f) })
         return this
     }
 
     @JvmName("afterDate")
-    fun after(sa: KMutableProperty1<E, Date?>, f: Date): PathWrap<E, G> {
+    fun after(sa: KProperty1<E, Date?>, f: Date): PathWrap<E, G> {
         pc.add({ cb.greaterThan(root.get(sa.name), f) })
         return this
     }
 
     @JvmName("after")
-    fun after(sa: KMutableProperty1<E, LocalDateTime?>, f: LocalDateTime): PathWrap<E, G> {
+    fun after(sa: KProperty1<E, LocalDateTime?>, f: LocalDateTime): PathWrap<E, G> {
         pc.add({ cb.greaterThan(root.get(sa.name), f) })
         return this
     }
 
     @JvmName("before")
-    fun before(sa: KMutableProperty1<E, LocalDateTime?>, f: LocalDateTime): PathWrap<E, G> {
+    fun before(sa: KProperty1<E, LocalDateTime?>, f: LocalDateTime): PathWrap<E, G> {
         pc.add({ cb.lessThan(root.get(sa.name), f) })
         return this
     }
 
-    fun before(sa: KMutableProperty1<E, Long?>, f: Long): PathWrap<E, G> {
+    fun before(sa: KProperty1<E, Long?>, f: Long): PathWrap<E, G> {
         pc.add({ cb.lessThan(root.get(sa.name), f) })
         return this
     }
 
     @JvmName("beforeDate")
-    fun before(sa: KMutableProperty1<E, Date?>, f: Date): PathWrap<E, G> {
+    fun before(sa: KProperty1<E, Date?>, f: Date): PathWrap<E, G> {
         pc.add({ cb.lessThan(root.get(sa.name), f) })
         return this
     }
@@ -329,6 +330,13 @@ open class PathWrap<E, G> constructor(
 
     override infix fun isIn(expr: SubqueryWrap<E, *>): PathWrap<E, G> {
         super.isIn(expr)
+        return this
+    }
+
+    fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: Root<J>.(Root<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+        newAnd()
+        isIn(subqueryFrom(clz, subqueryQuery))
+        finishClause()
         return this
     }
 
@@ -383,7 +391,7 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun <E : Any, RESULT> subqueryFrom(clz: KClass<E>, query: (RootWrap<E, E>) -> (ISugarQuerySelect<RESULT>)): SubqueryWrap<RESULT, G> {
+    fun <E : Any, RESULT> subqueryFrom(clz: KClass<E>, query: RootWrap<E, E>.(RootWrap<E, E>) -> (ISugarQuerySelect<RESULT>)): SubqueryWrap<RESULT, G> {
         val criteriaQuery = pc.criteria as CriteriaQuery<E>
         val subqueryPc = SubqueryPathContext(clz.java, pc.em, pc as QueryPathContext<G>, criteriaQuery.subquery(clz.java) as Subquery<G>)
         val returnedExpression = subqueryPc.invokeQuery(query)
@@ -391,21 +399,15 @@ open class PathWrap<E, G> constructor(
         return returnedExpression as SubqueryWrap<RESULT, G>
     }
 
-    fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: (RootWrap<J, J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
-        newAnd()
-        isIn(subqueryFrom(clz, subqueryQuery))
-        finishClause()
-        return this
-    }
 
-    fun <J : Any> exists(clz: KClass<J>, subqueryQuery: (RootWrap<J, J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> exists(clz: KClass<J>, subqueryQuery: Root<J>.(Root<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
         newAnd()
         exists(subqueryFrom(clz, subqueryQuery))
         finishClause()
         return this
     }
 
-    fun <J : Any> notExists(clz: KClass<J>, subqueryQuery: (RootWrap<J, J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> notExists(clz: KClass<J>, subqueryQuery: Root<J>.(Root<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
         newAnd()
         notExists(subqueryFrom(clz, subqueryQuery))
         finishClause()
@@ -474,12 +476,20 @@ open class PathWrap<E, G> constructor(
         return internalAnd(andClause as (PathWrap<E, G>) -> Unit)
     }*/
 
+
 }
 
-infix fun <E, G, T : PathWrap<E, G>> T.or(orClause: (T) -> Unit): T {
-    return this.internalOr(orClause as (PathWrap<E, G>) -> Unit) as T
+
+
+@Suppress("UNCHECKED_CAST")
+infix fun <E, G, T : PathWrap<E, G>> T.or(orClause: T.(T) -> Unit): T {
+    return this.internalOr(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
+}
+@Suppress("UNCHECKED_CAST")
+infix fun <E, G, T : PathWrap<E, G>> T.and(orClause: T.(T) -> Unit): T {
+    return this.internalAnd(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
 }
 
-infix fun <E, G, T : PathWrap<E, G>> T.and(orClause: (T) -> Unit): T {
-    return this.internalAnd(orClause as (PathWrap<E, G>) -> Unit) as T
+infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit):  T.(T) -> Unit {
+    return orClause;
 }

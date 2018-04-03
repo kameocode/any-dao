@@ -10,9 +10,9 @@ class JoinWrap<E, G> constructor(val pw: PathContext<G>,
                                  override val root: Join<Any, E>)
     : PathWrap<E, G>(pw, root) {
 
-    override val it: JoinWrap<E, G> by lazy {
+ /*   override val it: JoinWrap<E, G> by lazy {
         this
-    }
+    }*/
 
     @Suppress("UNCHECKED_CAST")
     fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType = JoinType.INNER): JoinWrap<F, G> {
