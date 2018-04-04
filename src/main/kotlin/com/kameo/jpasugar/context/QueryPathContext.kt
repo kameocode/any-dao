@@ -2,7 +2,7 @@ package com.kameo.jpasugar.context
 
 
 import com.kameo.jpasugar.ISugarQuerySelect
-import com.kameo.jpasugar.Root
+import com.kameo.jpasugar.KRoot
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import javax.persistence.EntityManager
@@ -26,8 +26,8 @@ class QueryPathContext<G>(clz: Class<*>,
     }
 
 
-    fun <RESULT, E> invokeQuery(query: Root<E>.(Root<E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
-        selector = query.invoke(rootWrap as Root<E>, rootWrap as Root<E>)
+    fun <RESULT, E> invokeQuery(query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
+        selector = query.invoke(rootWrap as KRoot<E>, rootWrap as KRoot<E>)
         val sell = selector!!.getSelection()
         criteria.select(sell as Selection<out G>).distinct(selector!!.isDistinct())
 

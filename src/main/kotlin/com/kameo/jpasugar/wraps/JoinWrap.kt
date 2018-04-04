@@ -1,6 +1,7 @@
 package com.kameo.jpasugar.wraps
 
 import com.kameo.jpasugar.context.PathContext
+import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Join
 import javax.persistence.criteria.JoinType
 import kotlin.reflect.KMutableProperty1
@@ -13,6 +14,10 @@ class JoinWrap<E, G> constructor(val pw: PathContext<G>,
  /*   override val it: JoinWrap<E, G> by lazy {
         this
     }*/
+
+    override fun getExpression(): Join<Any, E> {
+        return value as Join<Any, E>
+    }
 
     @Suppress("UNCHECKED_CAST")
     fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType = JoinType.INNER): JoinWrap<F, G> {

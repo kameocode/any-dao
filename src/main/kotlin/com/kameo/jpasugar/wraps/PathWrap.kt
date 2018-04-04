@@ -5,7 +5,7 @@ import com.kameo.jpasugar.AnyDAONew
 import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.ISelectExpressionProvider
 import com.kameo.jpasugar.ISugarQuerySelect
-import com.kameo.jpasugar.Root
+import com.kameo.jpasugar.KRoot
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
 import com.kameo.jpasugar.context.QueryPathContext
@@ -333,7 +333,7 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: Root<J>.(Root<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
         newAnd()
         isIn(subqueryFrom(clz, subqueryQuery))
         finishClause()
@@ -400,14 +400,14 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    fun <J : Any> exists(clz: KClass<J>, subqueryQuery: Root<J>.(Root<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> exists(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
         newAnd()
         exists(subqueryFrom(clz, subqueryQuery))
         finishClause()
         return this
     }
 
-    fun <J : Any> notExists(clz: KClass<J>, subqueryQuery: Root<J>.(Root<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> notExists(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
         newAnd()
         notExists(subqueryFrom(clz, subqueryQuery))
         finishClause()

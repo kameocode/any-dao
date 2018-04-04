@@ -5,7 +5,9 @@ import com.kameo.jpasugar.ISelectExpressionProvider
 import com.kameo.jpasugar.ISugarQuerySelect
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
+import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.Expression
+import javax.persistence.criteria.Predicate
 import javax.persistence.criteria.Selection
 
 open class ExpressionWrap<E, G> constructor(
@@ -31,6 +33,11 @@ open class ExpressionWrap<E, G> constructor(
 
     override fun isSingle(): Boolean {
         return pc.defaultSelection!!.isSingle()
+    }
+
+    infix fun predicate(predicate: (cb: CriteriaBuilder)-> Predicate?): ExpressionWrap<E, G> {
+        pc.add({ predicate.invoke(pc.cb)  })
+        return this
     }
 
     override fun eq(expr: E): ExpressionWrap<E, G> {

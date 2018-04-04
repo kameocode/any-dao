@@ -1,6 +1,6 @@
 package com.kameo.jpasugar.test
 
-import com.kameo.jpasugar.Root
+import com.kameo.jpasugar.KRoot
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
@@ -106,7 +106,7 @@ class ClausesTest : BaseTest() {
                 UserODB(email = "email2", task = TaskODB(name = "task1")))
 
         var restrictAlsoToEmail2 = false
-        val query: Root<UserODB>.(Root<UserODB>) -> Root<UserODB> = {
+        val query: KRoot<UserODB>.(KRoot<UserODB>) -> KRoot<UserODB> = {
             val p = clause {
                 it[UserODB::email] like "email1"
                 it[UserODB::email] like "email2"
@@ -132,7 +132,7 @@ class ClausesTest : BaseTest() {
                 UserODB(email = "email2", task = TaskODB(name = "task1")))
 
         var restrictAlsoToEmail2 = false
-        val query: Root<UserODB>.(Root<UserODB>) -> Root<UserODB> = {
+        val query: KRoot<UserODB>.(KRoot<UserODB>) -> KRoot<UserODB> = {
             if (restrictAlsoToEmail2)
                 and {
                     it[UserODB::email] like "email1"

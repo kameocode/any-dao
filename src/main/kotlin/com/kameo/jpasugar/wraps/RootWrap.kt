@@ -18,6 +18,10 @@ open class RootWrap<E, G> constructor(
         this
     }*/
 
+    override fun getExpression(): Root<E> {
+        return value as Root<E>
+    }
+
     @Suppress("UNCHECKED_CAST")
     fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType? = JoinType.INNER): JoinWrap<F, G> {
         val join = (root as From<Any, E>).join<E, F>(sa.name, joinType) as Join<Any, F>

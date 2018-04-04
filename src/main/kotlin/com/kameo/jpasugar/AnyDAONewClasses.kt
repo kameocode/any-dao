@@ -90,7 +90,7 @@ operator fun <E: Any?, G, R, R2> PathWrap<E, G>.get(foo: KProperty1<E, R?>, foo2
 }*/
 
 
-typealias Root<E> = RootWrap<E, E>
+typealias KRoot<E> = RootWrap<E, E>
 typealias KPath<E> = PathWrap<E, E>
 /*
 operator fun <E, G, R> PathWrap<E, G>.minus(foo: KMutableProperty1<E, R?>): PathWrap<R?, G>  {
