@@ -11,7 +11,7 @@ open class ComparableExpressionWrap<E : Comparable<E>, G>(pc: PathContext<G>,
     }
 
     infix fun before(f: ExpressionWrap<E, G>): ComparableExpressionWrap<E, G> {
-        pc.add({ cb.lessThan(value, f.getExpression()) })
+        pc.add({ cb.lessThan(value, f.getJpaExpression()) })
         return this
     }
 
@@ -21,7 +21,7 @@ open class ComparableExpressionWrap<E : Comparable<E>, G>(pc: PathContext<G>,
     }
 
     infix fun after(f: ExpressionWrap<E, G>): ComparableExpressionWrap<E, G> {
-        pc.add({ cb.greaterThan(value, f.getExpression()) })
+        pc.add({ cb.greaterThan(value, f.getJpaExpression()) })
         return this
     }
 
@@ -31,7 +31,7 @@ open class ComparableExpressionWrap<E : Comparable<E>, G>(pc: PathContext<G>,
     }
 
     infix fun ge(f: ExpressionWrap<E, G>): ComparableExpressionWrap<E, G> {
-        pc.add({ cb.greaterThanOrEqualTo(value, f.getExpression()) })
+        pc.add({ cb.greaterThanOrEqualTo(value, f.getJpaExpression()) })
         return this
     }
 
@@ -41,7 +41,7 @@ open class ComparableExpressionWrap<E : Comparable<E>, G>(pc: PathContext<G>,
     }
 
     infix fun gt(f: ExpressionWrap<E, G>): ComparableExpressionWrap<E, G> {
-        pc.add({ cb.greaterThan(value, f.getExpression()) })
+        pc.add({ cb.greaterThan(value, f.getJpaExpression()) })
         return this
     }
 
@@ -51,7 +51,7 @@ open class ComparableExpressionWrap<E : Comparable<E>, G>(pc: PathContext<G>,
     }
 
     infix fun lt(f: ExpressionWrap<E, G>): ComparableExpressionWrap<E, G> {
-        pc.add({ cb.lessThan(value, f.getExpression()) })
+        pc.add({ cb.lessThan(value, f.getJpaExpression()) })
         return this
     }
 
@@ -61,7 +61,7 @@ open class ComparableExpressionWrap<E : Comparable<E>, G>(pc: PathContext<G>,
     }
 
     infix fun le(f: ExpressionWrap<E, G>): ComparableExpressionWrap<E, G> {
-        pc.add({ cb.lessThanOrEqualTo(value, f.getExpression()) })
+        pc.add({ cb.lessThanOrEqualTo(value, f.getJpaExpression()) })
         return this
     }
 }

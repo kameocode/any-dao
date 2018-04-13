@@ -8,13 +8,14 @@ import javax.persistence.EntityManager
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Subquery
 
+@Suppress("UNCHECKED_CAST")
 class SubqueryPathContext<G>(clz: Class<*>,
                              em: EntityManager,
                              val parentContext: QueryPathContext<G>,
                              val subquery: Subquery<G>)
     : PathContext<G>(em, parentContext.criteria) {
 
-    var selector: ISugarQuerySelect<*>? = null // set after execution
+    lateinit var selector: ISugarQuerySelect<*> // set after execution
 
 
     init {
@@ -24,26 +25,17 @@ class SubqueryPathContext<G>(clz: Class<*>,
         rootWrap = RootWrap(this, root)
     }
 
-    //TODO execute from QueryPathContext
     fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>).(RootWrap<E, E>) -> ISugarQuerySelect<RESULT>): SubqueryWrap<RESULT, E> {
-        selector = query.invoke(rootWrap as RootWrap<E, E>, rootWrap as RootWrap<E, E>);
-        val sell = selector!!.getSelection()
-        val ss = subquery.select(sell as Expression<G>).distinct(selector!!.isDistinct())
-
-
-
+        selector = query.invoke(rootWrap as RootWrap<E, E>, rootWrap as RootWrap<E, E>)
+        val sell = selector.getSelection() as Expression<G>
+        subquery.select(sell).distinct(selector.isDistinct())
         getPredicate()?.let {
             subquery.where(it)
         }
         val groupBy = getGroupBy()
         if (groupBy.isNotEmpty()) {
-            subquery.groupBy(groupBy.map { it.getExpression() })
+            subquery.groupBy(groupBy.map { it.getJpaExpression() })
         }
-
-        // criteria.subquery()
-
-
-        // return SubqueryWrap<RESULT,E>(parentContext as QueryPathContext<E>,ss, subquery as Subquery<RESULT>) as SubqueryWrap<RESULT, E>;
         return SubqueryWrap(parentContext as QueryPathContext<E>, subquery as Expression<RESULT>, subquery as Subquery<RESULT>)
     }
 

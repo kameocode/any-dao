@@ -7,12 +7,14 @@ import com.kameo.jpasugar.wraps.PathWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import com.kameo.jpasugar.wraps.StringExpressionWrap
 import org.junit.Test
+import java.io.Serializable
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Selection
+import kotlin.Pair
 
 
 interface IExpression<F, G> {
-    fun getExpression(): Expression<F>
+    fun getJpaExpression(): Expression<F>
     infix fun eq(expr: IExpression<F, *>): IExpression<F, G>
     infix fun eq(expr: F): IExpression<F, G>
 }
@@ -22,6 +24,9 @@ interface IStringExpressionWrap<G> : IExpression<String, G> {
     infix fun like(f: Expression<String>): IExpression<String, G>
     infix fun like(f: ExpressionWrap<String, *>): IExpression<String, G>
     fun lower(): StringExpressionWrap<G>
+    fun concat(s: String): IExpression<String, G>
+    fun concat(expr: ExpressionWrap<String, *>): IExpression<String, G>
+
 }
 
 class NumberExpressionWrap<F, G> constructor(
@@ -90,19 +95,18 @@ operator fun <E: Any?, G, R, R2> PathWrap<E, G>.get(foo: KProperty1<E, R?>, foo2
 }*/
 
 
+data class Quadruple<out A, out B, out C, out D>(
+        val first: A,
+        val second: B,
+        val third: C,
+        val fourth: D
+): Serializable  {
+
+    override fun toString(): String = "($first, $second, $third, $fourth)"
+}
+
 typealias KRoot<E> = RootWrap<E, E>
 typealias KPath<E> = PathWrap<E, E>
-/*
-operator fun <E, G, R> PathWrap<E, G>.minus(foo: KMutableProperty1<E, R?>): PathWrap<R?, G>  {
-    val pw = this;
-    //if (foo is KMutableProperty1)
-
-        return pw.get(foo);
-    //FuturePath(foo)
-    //return // FuturePath(FakeMutable(foo as KProperty1<G, R>) as KMutableProperty1<G, R?>);
-     //   pw.get(FakeMutable(foo as KProperty1<T, R>) as PathWrap<R?, R>;
-}*/
-
 
 
 interface ISugarQuerySelect<E> {

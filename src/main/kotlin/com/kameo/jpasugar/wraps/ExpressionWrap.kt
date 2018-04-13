@@ -5,6 +5,7 @@ import com.kameo.jpasugar.ISelectExpressionProvider
 import com.kameo.jpasugar.ISugarQuerySelect
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
+import javax.persistence.criteria.CommonAbstractCriteria
 import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Predicate
@@ -18,11 +19,6 @@ open class ExpressionWrap<E, G> constructor(
         ISugarQuerySelect<G>, //by pathSelect,
         IExpression<E, G> {
 
-
- /*   open val it: ExpressionWrap<E, G> by lazy {
-        this
-    }*/
-
     override fun getSelection(): Selection<*> {
         return pc.defaultSelection!!.getSelection()
     }
@@ -35,23 +31,26 @@ open class ExpressionWrap<E, G> constructor(
         return pc.defaultSelection!!.isSingle()
     }
 
-    infix fun predicate(predicate: (cb: CriteriaBuilder)-> Predicate?): ExpressionWrap<E, G> {
-        pc.add({ predicate.invoke(pc.cb)  })
+    open infix fun predicate(predicate: ExpressionWrap<E,G>.(cb: CriteriaBuilder)-> Predicate?): ExpressionWrap<E, G> {
+        pc.add({ predicate.invoke(this, pc.cb)  })
         return this
     }
 
+    fun getJpaCriteria(): CommonAbstractCriteria{
+       return pc.criteria
+    }
     override fun eq(expr: E): ExpressionWrap<E, G> {
         pc.add({ pc.cb.equal(this.value, expr) })
         return this
     }
 
     override fun eq(expr: IExpression<E, *>): ExpressionWrap<E, G> {
-        pc.add({ pc.cb.equal(this.value, expr.getExpression()) })
+        pc.add({ pc.cb.equal(this.value, expr.getJpaExpression()) })
         return this
     }
 
     open infix fun notEq(expr: IExpression<E, *>): ExpressionWrap<E, G> {
-        pc.add({ pc.cb.notEqual(this.value, expr.getExpression()) })
+        pc.add({ pc.cb.notEqual(this.value, expr.getJpaExpression()) })
         return this
     }
 
@@ -86,7 +85,7 @@ open class ExpressionWrap<E, G> constructor(
         return SelectWrap(value)
     }
 
-    override fun getExpression(): Expression<E> {
+    override fun getJpaExpression(): Expression<E> {
         return value
     }
 

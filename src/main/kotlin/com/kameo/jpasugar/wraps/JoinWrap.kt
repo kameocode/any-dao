@@ -11,11 +11,8 @@ class JoinWrap<E, G> constructor(val pw: PathContext<G>,
                                  override val root: Join<Any, E>)
     : PathWrap<E, G>(pw, root) {
 
- /*   override val it: JoinWrap<E, G> by lazy {
-        this
-    }*/
 
-    override fun getExpression(): Join<Any, E> {
+    override fun getJpaExpression(): Join<Any, E> {
         return value as Join<Any, E>
     }
 

@@ -38,6 +38,44 @@ class AnyDAONew(val em: EntityManager) {
         override fun isSingle(): Boolean = false
     }
 
+    class PathQuadrupleSelect<E, F, G, H>(val first: ISugarQuerySelect<E>,
+                                          val second: ISugarQuerySelect<F>,
+                                          val third: ISugarQuerySelect<G>,
+                                          val fourth: ISugarQuerySelect<H>,
+                                          val distinct: Boolean, val cb: CriteriaBuilder) : ISugarQuerySelect<Quadruple<E, F, G, H>> {
+        override fun isDistinct(): Boolean = distinct
+
+        override fun getSelection(): Selection<Tuple> {
+            return cb.tuple(first.getSelection(), second.getSelection(), third.getSelection(), fourth.getSelection())
+        }
+
+        override fun isSingle(): Boolean = false
+    }
+    class PathArraySelect(val distinct: Boolean, val cb: CriteriaBuilder, vararg val pw1: ISugarQuerySelect<*>) : ISugarQuerySelect<Array<Any>> {
+        override fun isDistinct(): Boolean = distinct
+
+        override fun getSelection(): Selection<Tuple> {
+            val sel = pw1.map { it.getSelection() }.toTypedArray();
+            return cb.tuple(*sel)
+        }
+
+        override fun isSingle(): Boolean = false
+    }
+
+    class PathObjectSelect<E : Any>(val clz: KClass<E>, val distinct: Boolean, val cb: CriteriaBuilder, vararg val expr: ExpressionWrap<*, *>) : ISugarQuerySelect<E> {
+        override fun isDistinct(): Boolean = distinct
+
+        override fun getSelection(): Selection<E> {
+            val sel = expr.map { it.getJpaExpression() }.toTypedArray();
+            return cb.construct(clz.java, *sel)
+        }
+
+        override fun isSingle(): Boolean = false
+    }
+
+    fun clear() {
+        em.clear()
+    }
 
     fun <T> merge(entity: T): T {
         return em.merge(entity)
@@ -119,14 +157,14 @@ class AnyDAONew(val em: EntityManager) {
     fun <E : Any> count(clz: KClass<E>): Long {
         return count(clz, {})
     }
+
     fun <E : Any> count(clz: KClass<E>, query: KRoot<E>.(KRoot<E>) -> Unit): Long {
         val wrapperQuery: KRoot<E>.(KRoot<E>) -> (ISugarQuerySelect<Long>) = {
             query.invoke(this, this);
-           it.select(it.count())
+            it.select(it.count())
         }
         return one(clz.java, Long::class.java, wrapperQuery)
     }
-
 
 
     inline fun <E : Any, reified RESULT : Any> getFirst(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT? {

@@ -27,4 +27,11 @@ class StringExpressionWrap<G> constructor(
     override fun lower(): StringExpressionWrap<G> {
         return StringExpressionWrap(pc, pc.cb.lower(value))
     }
+
+    override fun concat(s: String): StringExpressionWrap<G> {
+        return StringExpressionWrap(pc, pc.cb.concat(value, s))
+    }
+    override fun concat(expr: ExpressionWrap<String, *>): StringExpressionWrap<G> {
+        return StringExpressionWrap(pc, pc.cb.concat(value, expr.getJpaExpression()))
+    }
 }

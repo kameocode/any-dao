@@ -6,6 +6,7 @@ import javax.persistence.Query
 import javax.persistence.criteria.CriteriaUpdate
 import javax.persistence.criteria.Root
 
+@Suppress("UNCHECKED_CAST")
 class UpdatePathContext<G>(clz: Class<*>,
                            em: EntityManager,
                            override val criteria: CriteriaUpdate<G> = em.criteriaBuilder.createCriteriaUpdate(clz) as CriteriaUpdate<G>)
@@ -16,7 +17,6 @@ class UpdatePathContext<G>(clz: Class<*>,
         rootWrap = RootWrapUpdate(this, root)
     }
 
-    @Suppress("UNCHECKED_CAST")
     fun <E> invokeUpdate(query: (RootWrapUpdate<E, E>) -> Unit): Query {
         query.invoke(rootWrap as RootWrapUpdate<E, E>)
         calculateWhere(criteria)

@@ -3,11 +3,13 @@ package com.kameo.jpasugar.test
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
+import com.kameo.jpasugar.wraps.SubqueryWrap
 import org.junit.Assert
 import org.junit.Test
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Join
 import javax.persistence.criteria.JoinType
+import javax.persistence.criteria.Subquery
 
 class JpaAccessTest : BaseTest() {
 
@@ -18,7 +20,7 @@ class JpaAccessTest : BaseTest() {
         anyDao.persist(u1, u2)
 
         val res = anyDao.all(UserODB::class) {
-            val expr = it[UserODB::task].getExpression();
+            val expr = it[UserODB::task].getJpaExpression();
             Assert.assertNotNull(expr)
             it predicate { cb -> cb.equal(expr, u1.task) }
         }
@@ -27,7 +29,7 @@ class JpaAccessTest : BaseTest() {
 
 
         val res2 = anyDao.all(UserODB::class) {
-            val expr: Expression<Long> = it[UserODB::task, TaskODB::id].getExpression();
+            val expr: Expression<Long> = it[UserODB::task, TaskODB::id].getJpaExpression();
             it predicate { _ ->
                 expr.`in`(u1.task.id, u2.task.id)
             }
@@ -36,7 +38,7 @@ class JpaAccessTest : BaseTest() {
 
 
         val res3 = anyDao.all(UserODB::class) {
-            val task: Join<Any, TaskODB> = it.join(UserODB::allTasks).getExpression();
+            val task: Join<Any, TaskODB> = it.join(UserODB::allTasks).getJpaExpression();
             Assert.assertEquals(task.joinType, JoinType.INNER)
 
             it predicate { cb ->
@@ -47,14 +49,14 @@ class JpaAccessTest : BaseTest() {
 
         val res4 = anyDao.all(UserODB::class) {
             it predicate { cb ->
-                cb.equal(it.join(UserODB::allTasks).getExpression().get<String>("name"), "allTask-na")
+                cb.equal(it.join(UserODB::allTasks).getJpaExpression().get<String>("name"), "allTask-na")
             }
         }
         Assert.assertEquals(0, res4.size)
 
         val res5 = anyDao.all(UserODB::class) {
             it.join(UserODB::allTasks) {
-                val expr = it.getExpression();
+                val expr = it.getJpaExpression();
                 it predicate { cb ->
                     cb.equal(expr.get<String>("name"), "allTask2")
                 }
@@ -63,15 +65,33 @@ class JpaAccessTest : BaseTest() {
         Assert.assertEquals(1, res5.size)
 
 
-/*        val res6 = anyDao.all(UserODB::class) {
-            val expr: KRoot<UserODB> = it.getExpression();
-            it predicate { cb ->
-                //TODO access to subquery
-                cb.equal(expr.get<String>("name"), "allTask2")
+        val res6 = anyDao.all(UserODB::class) {
+            val subquery: SubqueryWrap<TaskODB, UserODB> = it.subqueryFrom(TaskODB::class) {
+                it[TaskODB::name] like "task1"
+            }
+            it predicate { _ ->
+                val jpaSubquery: Subquery<TaskODB> = subquery.getJpaExpression()
+                it[UserODB::task].getJpaExpression().`in`(jpaSubquery)
             }
 
         }
-        Assert.assertEquals(1, res6.size)*/
+        Assert.assertEquals("Access to subquery should work", 1, res6.size)
+
+
+        val res7 = anyDao.all(UserODB::class) {
+            val subquery: SubqueryWrap<TaskODB, UserODB> = it.subqueryFrom(TaskODB::class) {
+                it[TaskODB::name] like "task1"
+            }
+            it predicate { cb ->
+                val jpaSubquery = getJpaCriteria().subquery(TaskODB::class.java);
+                val subqueryRoot = jpaSubquery.from(TaskODB::class.java)
+                jpaSubquery.select(subqueryRoot)
+                jpaSubquery.where(cb.equal(subqueryRoot.get<String>("name"), "task1"))
+                it[UserODB::task].getJpaExpression().`in`(jpaSubquery);
+            }
+
+        }
+        Assert.assertEquals("Access to criteria", 1, res7.size)
     }
 
 }

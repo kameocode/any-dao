@@ -29,16 +29,16 @@ open class PathWrap<E, G> constructor(
         pc: PathContext<G>,
         open val root: Path<E>
 ) : ExpressionWrap<E, G>(pc, root) {
-   /* override val it: PathWrap<E, G> by lazy {
-        this
-    }*/
+    /* override val it: PathWrap<E, G> by lazy {
+         this
+     }*/
 
     infix fun groupBy(expr: KProperty1<E, *>) {
         return pc.groupBy(arrayOf(ExpressionWrap<E, G>(pc, root.get(expr.name))))
     }
 
     infix fun groupBy(expr: ExpressionWrap<E, *>) {
-        return pc.groupBy(arrayOf(ExpressionWrap(pc, expr.getExpression())))
+        return pc.groupBy(arrayOf(ExpressionWrap(pc, expr.getJpaExpression())))
     }
 
     fun groupBy(vararg exprs: KProperty1<E, *>) {
@@ -76,9 +76,28 @@ open class PathWrap<E, G> constructor(
         return AnyDAONew.PathPairSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), distinct, pc.cb)
     }
 
-
     fun <F, G, H> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>, pw3: ISelectExpressionProvider<H>, distinct: Boolean = false): AnyDAONew.PathTripleSelect<F, G, H> {
         return AnyDAONew.PathTripleSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), pw3.getDirectSelection(), distinct, pc.cb)
+    }
+
+    fun <F, G, H, I> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>,
+                            pw3: ISelectExpressionProvider<H>,
+                            pw4: ISelectExpressionProvider<I>,
+                            distinct: Boolean = false): AnyDAONew.PathQuadrupleSelect<F, G, H, I> {
+        return AnyDAONew.PathQuadrupleSelect(pw1.getDirectSelection(),
+                pw2.getDirectSelection(),
+                pw3.getDirectSelection(),
+                pw4.getDirectSelection(),
+                distinct, pc.cb)
+    }
+
+    fun selectArray(vararg pw1: ISelectExpressionProvider<*>,
+                            distinct: Boolean = false): AnyDAONew.PathArraySelect {
+        return AnyDAONew.PathArraySelect(distinct, pc.cb, *pw1.map { it.getDirectSelection() }.toTypedArray())
+    }
+
+    fun <F : Any> select(clz: KClass<F>, vararg expr: ExpressionWrap<*, *>, distinct: Boolean = false): AnyDAONew.PathObjectSelect<F> {
+        return AnyDAONew.PathObjectSelect(clz, distinct, pc.cb, *expr)
     }
 
     infix fun eqId(id: Long): PathWrap<E, G> {
@@ -226,7 +245,7 @@ open class PathWrap<E, G> constructor(
 
 
     fun <F> eq(exp1: ExpressionWrap<F, G>, f: F): PathWrap<E, G> {
-        pc.add({ cb.equal(exp1.getExpression(), f) })
+        pc.add({ cb.equal(exp1.getJpaExpression(), f) })
         return this
     }
 
@@ -358,6 +377,9 @@ open class PathWrap<E, G> constructor(
         return ExpressionWrap<F, G>(pc, pc.cb.min(root.get(sa.name)))
     }
 
+    infix fun orderBy(sa: KProperty1<E, *>): PathWrap<E, G> {
+        return this.orderByAsc(sa)
+    }
 
     infix fun orderByAsc(sa: KProperty1<E, *>): PathWrap<E, G> {
         pc.addOrder(cb.asc(root.get<Any>(sa.name)))
@@ -369,6 +391,10 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
+    infix fun orderBy(pathWrap: PathWrap<*, *>): PathWrap<E, G> {
+        pc.addOrder(cb.asc(pathWrap.root))
+        return this
+    }
 
     infix fun orderBy(pw: Pair<PathWrap<*, *>, Boolean>) {
         val (pathWrap, asc) = pw
@@ -461,6 +487,8 @@ open class PathWrap<E, G> constructor(
         val p: Path<F> = root.get(sa.name)
         return StringPathWrap(pc, p.get(sa2.name))
     }
+
+
 /*
     open infix fun and(andClause: (PathWrap<E, G>) -> Unit): PathWrap<E, G> {
         return internalAnd(andClause);
@@ -480,16 +508,16 @@ open class PathWrap<E, G> constructor(
 }
 
 
-
 @Suppress("UNCHECKED_CAST")
 infix fun <E, G, T : PathWrap<E, G>> T.or(orClause: T.(T) -> Unit): T {
     return this.internalOr(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
 }
+
 @Suppress("UNCHECKED_CAST")
 infix fun <E, G, T : PathWrap<E, G>> T.and(orClause: T.(T) -> Unit): T {
     return this.internalAnd(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
 }
 
-infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit):  T.(T) -> Unit {
+infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) -> Unit {
     return orClause;
 }

@@ -61,4 +61,22 @@ class SubqueriesTest : BaseTest() {
         }
         Assert.assertEquals(0, res5.size)
     }
+
+    @Test
+    fun `should execute subquery with custom selection`() {
+        val u1 = UserODB(email = "email2", task = TaskODB(name = "task1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
+
+        val res = anyDao.all(UserODB::class) {
+            val subquery = it.subqueryFrom(TaskODB::class) {
+                it[TaskODB::name] like "task1"
+                it.select(it[TaskODB::name])
+            }
+            it[UserODB::task, TaskODB::name] isIn subquery
+        }
+        Assert.assertEquals(1, res.size)
+
+    }
 }

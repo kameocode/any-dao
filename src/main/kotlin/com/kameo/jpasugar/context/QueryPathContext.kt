@@ -1,8 +1,10 @@
 package com.kameo.jpasugar.context
 
 
+import com.kameo.jpasugar.AnyDAONew
 import com.kameo.jpasugar.ISugarQuerySelect
 import com.kameo.jpasugar.KRoot
+import com.kameo.jpasugar.Quadruple
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import javax.persistence.EntityManager
@@ -16,8 +18,7 @@ class QueryPathContext<G>(clz: Class<*>,
                           override val criteria: CriteriaQuery<G> = em.criteriaBuilder.createQuery(clz) as CriteriaQuery<G>)
     : PathContext<G>(em, criteria) {
 
-    var selector: ISugarQuerySelect<*>? = null // set after execution
-
+    private lateinit var selector: ISugarQuerySelect<*> // set after execution (invokeQuery)
 
     init {
         root = criteria.from(clz as Class<Any>)
@@ -25,15 +26,13 @@ class QueryPathContext<G>(clz: Class<*>,
         rootWrap = RootWrap(this, root)
     }
 
-
     fun <RESULT, E> invokeQuery(query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
         selector = query.invoke(rootWrap as KRoot<E>, rootWrap as KRoot<E>)
-        val sell = selector!!.getSelection()
-        criteria.select(sell as Selection<out G>).distinct(selector!!.isDistinct())
-
+        val sell = selector.getSelection() as Selection<out G>
+        criteria.select(sell).distinct(selector.isDistinct())
         val groupBy = getGroupBy()
         if (groupBy.isNotEmpty()) {
-            criteria.groupBy(groupBy.map { it.getExpression() })
+            criteria.groupBy(groupBy.map { it.getJpaExpression() })
         }
         return calculateWhere(em) as TypedQuery<RESULT>
     }
@@ -60,36 +59,32 @@ class QueryPathContext<G>(clz: Class<*>,
     }
 
     fun <RESULT : Any> mapToPluralsIfNeeded(res: RESULT): RESULT {
+        if (selector is AnyDAONew.PathArraySelect) {
+            return res;
+        }
         if (res is Array<*>) {
-
-            if (res.size == 2) {
-                return Pair(res[0], res[1]) as RESULT
-
-            } else if (res.size == 3) {
-                return Triple(res[0], res[1], res[2]) as RESULT
-
+            return when (res.size) {
+                2 -> Pair(res[0], res[1]) as RESULT
+                3 -> Triple(res[0], res[1], res[2]) as RESULT
+                4 -> Quadruple(res[0], res[1], res[2], res[3]) as RESULT
+                else -> throw IllegalArgumentException("More than three parameteres are not supported")
             }
         }
-        return res;
+        return res
     }
 
     fun <RESULT : Any> mapToPluralsIfNeeded(res: List<RESULT>): List<RESULT> {
-        if (res.isNotEmpty()) {
-            if (!selector!!.isSingle()) {
-                if (res.first() is Array<*>) {
-
-                    val rows = res as List<Array<Any>>
-                    val row = rows.first()
-                    if (row.size == 2) {
-                        return rows.map({
-                            Pair(it[0], it[1]) as RESULT
-                        })
-                    } else if (row.size == 3) {
-                        return rows.map({
-                            Triple(it[0], it[1], it[2]) as RESULT
-                        })
-                    }
-                }
+        if (selector is AnyDAONew.PathArraySelect) {
+            return res;
+        }
+        if (res.isNotEmpty() && !selector.isSingle() && res.first() is Array<*>) {
+            val rows = res as List<Array<Any>>
+            val row = rows.first()
+            return when (row.size) {
+                2 -> rows.map({ Pair(it[0], it[1]) as RESULT })
+                3 -> rows.map({ Triple(it[0], it[1], it[2]) as RESULT })
+                4 -> rows.map({ Quadruple(it[0], it[1], it[2], it[3]) as RESULT })
+                else -> throw IllegalArgumentException("More than three parameteres are not supported")
             }
         }
         return res

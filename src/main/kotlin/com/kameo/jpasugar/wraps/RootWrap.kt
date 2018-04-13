@@ -14,11 +14,11 @@ open class RootWrap<E, G> constructor(
         val pw: PathContext<G>,
         root: Root<E>) : PathWrap<E, G>(pw, root) {
 
-  /*  override val it: RootWrap<E, G> by lazy {
-        this
-    }*/
+    /*  override val it: RootWrap<E, G> by lazy {
+          this
+      }*/
 
-    override fun getExpression(): Root<E> {
+    override fun getJpaExpression(): Root<E> {
         return value as Root<E>
     }
 
@@ -32,10 +32,10 @@ open class RootWrap<E, G> constructor(
     fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType = JoinType.INNER, andClause: JoinWrap<F, G>.(JoinWrap<F, G>) -> Unit): JoinWrap<F, G> {
         val join = (root as From<Any, E>).join<E, F>(sa.name, joinType) as Join<Any, F>
         val jw = JoinWrap(pw, join)
-        jw.newAnd();
-        andClause.invoke(jw, jw);
-        jw.finishClause();
-        return jw;
+        jw.newAnd()
+        andClause.invoke(jw, jw)
+        jw.finishClause()
+        return jw
     }
 
     @JvmName("joinList")
