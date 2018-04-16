@@ -6,6 +6,7 @@ import com.kameo.jpasugar.context.UpdatePathContext
 import com.kameo.jpasugar.wraps.ExpressionWrap
 import com.kameo.jpasugar.wraps.RootWrapUpdate
 import javax.persistence.EntityManager
+import javax.persistence.NoResultException
 import javax.persistence.Tuple
 import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.Expression
@@ -16,13 +17,13 @@ import kotlin.reflect.KClass
 typealias PageConsumer<RESULT> = (List<RESULT>) -> Boolean
 
 @Suppress("UNUSED_PARAMETER") // parameter resltClass is unused but needed for type safety
-class AnyDAONew(val em: EntityManager) {
+class AnyDAO(val em: EntityManager) {
 
     class PathPairSelect<E, F>(val first: ISugarQuerySelect<E>, val second: ISugarQuerySelect<F>, val distinct: Boolean, val cb: CriteriaBuilder) : ISugarQuerySelect<Pair<E, F>> {
         override fun isDistinct(): Boolean = distinct
 
-        override fun getSelection(): Selection<Tuple> {
-            return cb.tuple(first.getSelection(), second.getSelection())
+        override fun getJpaSelection(): Selection<Tuple> {
+            return cb.tuple(first.getJpaSelection(), second.getJpaSelection())
         }
 
         override fun isSingle(): Boolean = false
@@ -31,8 +32,8 @@ class AnyDAONew(val em: EntityManager) {
     class PathTripleSelect<E, F, G>(val first: ISugarQuerySelect<E>, val second: ISugarQuerySelect<F>, val third: ISugarQuerySelect<G>, val distinct: Boolean, val cb: CriteriaBuilder) : ISugarQuerySelect<Triple<E, F, G>> {
         override fun isDistinct(): Boolean = distinct
 
-        override fun getSelection(): Selection<Tuple> {
-            return cb.tuple(first.getSelection(), second.getSelection(), third.getSelection())
+        override fun getJpaSelection(): Selection<Tuple> {
+            return cb.tuple(first.getJpaSelection(), second.getJpaSelection(), third.getJpaSelection())
         }
 
         override fun isSingle(): Boolean = false
@@ -45,8 +46,8 @@ class AnyDAONew(val em: EntityManager) {
                                           val distinct: Boolean, val cb: CriteriaBuilder) : ISugarQuerySelect<Quadruple<E, F, G, H>> {
         override fun isDistinct(): Boolean = distinct
 
-        override fun getSelection(): Selection<Tuple> {
-            return cb.tuple(first.getSelection(), second.getSelection(), third.getSelection(), fourth.getSelection())
+        override fun getJpaSelection(): Selection<Tuple> {
+            return cb.tuple(first.getJpaSelection(), second.getJpaSelection(), third.getJpaSelection(), fourth.getJpaSelection())
         }
 
         override fun isSingle(): Boolean = false
@@ -54,18 +55,28 @@ class AnyDAONew(val em: EntityManager) {
     class PathArraySelect(val distinct: Boolean, val cb: CriteriaBuilder, vararg val pw1: ISugarQuerySelect<*>) : ISugarQuerySelect<Array<Any>> {
         override fun isDistinct(): Boolean = distinct
 
-        override fun getSelection(): Selection<Tuple> {
-            val sel = pw1.map { it.getSelection() }.toTypedArray();
+        override fun getJpaSelection(): Selection<Tuple> {
+            val sel = pw1.map { it.getJpaSelection() }.toTypedArray();
             return cb.tuple(*sel)
         }
 
         override fun isSingle(): Boolean = false
     }
 
+    class PathTupleSelect(val distinct: Boolean, val cb: CriteriaBuilder, vararg val selects: ISugarQuerySelect<*>) : ISugarQuerySelect<TupleWrap> {
+        override fun isDistinct(): Boolean = distinct
+
+        override fun getJpaSelection(): Selection<Tuple> {
+            val sel = selects.map { it.getJpaSelection() }.toTypedArray();
+            return cb.tuple(*sel)
+        }
+
+        override fun isSingle(): Boolean = false
+    }
     class PathObjectSelect<E : Any>(val clz: KClass<E>, val distinct: Boolean, val cb: CriteriaBuilder, vararg val expr: ExpressionWrap<*, *>) : ISugarQuerySelect<E> {
         override fun isDistinct(): Boolean = distinct
 
-        override fun getSelection(): Selection<E> {
+        override fun getJpaSelection(): Selection<E> {
             val sel = expr.map { it.getJpaExpression() }.toTypedArray();
             return cb.construct(clz.java, *sel)
         }
@@ -105,6 +116,7 @@ class AnyDAONew(val em: EntityManager) {
         return pc.mapToPluralsIfNeeded<RESULT>(res)
     }
 
+    @Throws(NoResultException::class)
     fun <E : Any, RESULT : Any> one(clz: Class<E>, resultClass: Class<RESULT>, query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT {
         val pc = QueryPathContext<RESULT>(clz, em)
         val jpaQuery = pc.invokeQuery(query)
@@ -112,12 +124,12 @@ class AnyDAONew(val em: EntityManager) {
         return pc.mapToPluralsIfNeeded<RESULT>(jpaQuery.singleResult)
     }
 
+    @Throws(NoResultException::class)
     inline fun <E : Any, reified RESULT : Any> one(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT {
         return one(clz.java, RESULT::class.java, query)
     }
 
-
-    fun <E : Any, RESULT : Any> getFirst(clz: Class<E>, resultClass: Class<RESULT>, query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
+    fun <E : Any, RESULT : Any> first(clz: Class<E>, resultClass: Class<RESULT>, query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
         val pc = QueryPathContext<RESULT>(clz, em)
         val jpaQuery = pc.invokeQuery(query)
         jpaQuery.maxResults = 1
@@ -138,13 +150,13 @@ class AnyDAONew(val em: EntityManager) {
     fun <E : Any> exists(clz: Class<E>, query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<*>): Boolean {
         val queryExists: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<Long> = {
             val invoke: ISugarQuerySelect<*> = query.invoke(it, it)
-            it.select(ExpressionWrap(it.pc, em.criteriaBuilder.count(invoke.getSelection() as Expression<*>)))
+            it.select(ExpressionWrap(it.pc, em.criteriaBuilder.count(invoke.getJpaSelection() as Expression<*>)))
         }
         return one(clz, Long::class.java, queryExists) > 0
     }
 
 
-    fun <E : Any> ensureIsOnlyOne(res: List<E>): E {
+    private fun <E : Any> ensureIsOnlyOne(res: List<E>): E {
         if (res.isEmpty() || res.size > 1)
             throw IllegalArgumentException("Expected exactly 1 result but query returned ${res.size} results.")
         return res.first()
@@ -167,14 +179,9 @@ class AnyDAONew(val em: EntityManager) {
     }
 
 
-    inline fun <E : Any, reified RESULT : Any> getFirst(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
-        return getFirst(clz.java, RESULT::class.java, query)
+    inline fun <E : Any, reified RESULT : Any> first(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
+        return first(clz.java, RESULT::class.java, query)
     }
-
-    inline fun <E : Any, reified RESULT : Any> getFirst2(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): RESULT? {
-        return getFirst(clz.java, RESULT::class.java, query)
-    }
-
 
     inline fun <E : Any, reified RESULT : Any> allMutable(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): MutableList<RESULT> {
         return all(clz.java, RESULT::class.java, query) as MutableList<RESULT>
@@ -197,7 +204,7 @@ class AnyDAONew(val em: EntityManager) {
             var currentpage = page;
 
             override fun invoke(): List<RESULT> {
-                val results = this@AnyDAONew.page(clz, currentpage, query);
+                val results = this@AnyDAO.page(clz, currentpage, query);
                 currentpage = currentpage.next();
                 return results;
             }

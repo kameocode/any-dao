@@ -1,6 +1,6 @@
 package com.kameo.jpasugar.test.helpers
 
-import com.kameo.jpasugar.AnyDAONew
+import com.kameo.jpasugar.AnyDAO
 import org.junit.After
 import org.junit.Before
 import javax.persistence.EntityManager
@@ -8,7 +8,7 @@ import javax.persistence.Persistence
 
 open class BaseTest {
     private val em: EntityManager = Persistence.createEntityManagerFactory("test-pu").createEntityManager()
-    protected val anyDao = AnyDAONew(em)
+    protected val anyDao = AnyDAO(em)
 
     @Before
     fun before() {

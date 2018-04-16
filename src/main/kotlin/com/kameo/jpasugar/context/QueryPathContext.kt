@@ -1,11 +1,12 @@
 package com.kameo.jpasugar.context
 
 
-import com.kameo.jpasugar.AnyDAONew
+import com.kameo.jpasugar.AnyDAO
 import com.kameo.jpasugar.ISugarQuerySelect
 import com.kameo.jpasugar.KRoot
 import com.kameo.jpasugar.Quadruple
 import com.kameo.jpasugar.SelectWrap
+import com.kameo.jpasugar.TupleWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import javax.persistence.EntityManager
 import javax.persistence.TypedQuery
@@ -28,7 +29,7 @@ class QueryPathContext<G>(clz: Class<*>,
 
     fun <RESULT, E> invokeQuery(query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
         selector = query.invoke(rootWrap as KRoot<E>, rootWrap as KRoot<E>)
-        val sell = selector.getSelection() as Selection<out G>
+        val sell = selector.getJpaSelection() as Selection<out G>
         criteria.select(sell).distinct(selector.isDistinct())
         val groupBy = getGroupBy()
         if (groupBy.isNotEmpty()) {
@@ -58,10 +59,18 @@ class QueryPathContext<G>(clz: Class<*>,
             jpaQuery.maxResults = take
     }
 
+
+
     fun <RESULT : Any> mapToPluralsIfNeeded(res: RESULT): RESULT {
-        if (selector is AnyDAONew.PathArraySelect) {
+        if (selector is AnyDAO.PathArraySelect ) {
             return res;
         }
+        if (selector is AnyDAO.PathTupleSelect) {
+            val row = res as Array<Any>
+            val elementList = (selector as AnyDAO.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
+            return  TupleWrap(row, elementList) as RESULT
+        }
+
         if (res is Array<*>) {
             return when (res.size) {
                 2 -> Pair(res[0], res[1]) as RESULT
@@ -74,8 +83,13 @@ class QueryPathContext<G>(clz: Class<*>,
     }
 
     fun <RESULT : Any> mapToPluralsIfNeeded(res: List<RESULT>): List<RESULT> {
-        if (selector is AnyDAONew.PathArraySelect) {
+        if (selector is AnyDAO.PathArraySelect) {
             return res;
+        }
+        if (selector is AnyDAO.PathTupleSelect && res.isNotEmpty() && !selector.isSingle() && res.first() is Array<*>) {
+            val rows = res as List<Array<Any>>
+            val elementList = (selector as AnyDAO.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
+            return rows.map { TupleWrap(it, elementList) as RESULT };
         }
         if (res.isNotEmpty() && !selector.isSingle() && res.first() is Array<*>) {
             val rows = res as List<Array<Any>>

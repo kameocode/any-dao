@@ -27,7 +27,7 @@ class SubqueryPathContext<G>(clz: Class<*>,
 
     fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>).(RootWrap<E, E>) -> ISugarQuerySelect<RESULT>): SubqueryWrap<RESULT, E> {
         selector = query.invoke(rootWrap as RootWrap<E, E>, rootWrap as RootWrap<E, E>)
-        val sell = selector.getSelection() as Expression<G>
+        val sell = selector.getJpaSelection() as Expression<G>
         subquery.select(sell).distinct(selector.isDistinct())
         getPredicate()?.let {
             subquery.where(it)

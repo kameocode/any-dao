@@ -5,9 +5,13 @@ import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
 import com.kameo.jpasugar.wraps.and
+import com.kameo.jpasugar.wraps.like
+import com.kameo.jpasugar.wraps.lower
+import com.kameo.jpasugar.wraps.max
 import com.kameo.jpasugar.wraps.or
 import org.junit.Assert
 import org.junit.Test
+import javax.persistence.NoResultException
 
 
 class FindAllTest : BaseTest() {
@@ -147,6 +151,46 @@ class FindAllTest : BaseTest() {
     }
 
     @Test
+    fun `should return one and first result`() {
+
+        anyDao.persist(
+                UserODB(email = "email1", task = TaskODB(name = "task1")),
+                UserODB(email = "email2", task = TaskODB(name = "task2")),
+                UserODB(email = "email3", task = TaskODB(name = "task3")))
+
+        val u1: UserODB = anyDao.one(UserODB::class) { it[UserODB::email] like "email1" }
+        val u2: UserODB? = anyDao.first(UserODB::class) { it[UserODB::email] like "email1" }
+
+        try {
+            val uu1: UserODB = anyDao.one(UserODB::class) { it[UserODB::email] like "email4" }
+            Assert.fail()
+        } catch (th: NoResultException) {
+            // ignore
+        }
+        val uu2: UserODB? = anyDao.first(UserODB::class) { it[UserODB::email] like "email4" }
+
+        Assert.assertNotNull(u1)
+        Assert.assertNotNull(u2)
+        Assert.assertNull(uu2)
+    }
+
+    @Test
+    fun `should return lower string`() {
+
+        anyDao.persist(
+                UserODB(email = "Email1", task = TaskODB(name = "task1")),
+                UserODB(email = "Email2", task = TaskODB(name = "task2")),
+                UserODB(email = "Email3", task = TaskODB(name = "task3")))
+
+        val uu1: String = anyDao.one(UserODB::class) {
+            it[UserODB::email] like "Email1"
+            it.select(it[UserODB::email].lower())
+        }
+
+        Assert.assertEquals("email1", uu1)
+    }
+
+    @Test
     fun `should return max id`() {
         val u3 = UserODB(email = "email3", task = TaskODB(name = "t2"))
         anyDao.persist(
@@ -155,7 +199,7 @@ class FindAllTest : BaseTest() {
                 u3)
 
         val max = anyDao.one(UserODB::class) {
-            it.select(it.max(UserODB::id))
+            it.select(it[UserODB::id].max())
         }
         Assert.assertEquals(u3.id, max)
     }

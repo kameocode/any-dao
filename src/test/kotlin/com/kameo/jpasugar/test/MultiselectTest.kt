@@ -1,12 +1,16 @@
 package com.kameo.jpasugar.test
 
-import com.kameo.jpasugar.AnyDAONew
+import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.Quadruple
+import com.kameo.jpasugar.TupleWrap
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
+import com.kameo.jpasugar.wraps.concat
+import com.kameo.jpasugar.wraps.max
 import org.junit.Assert
 import org.junit.Test
+import kotlin.properties.Delegates
 
 
 class MultiselectTest : BaseTest() {
@@ -22,7 +26,7 @@ class MultiselectTest : BaseTest() {
             val taskName = it[UserODB::task, TaskODB::name]
             it.select(taskName, it[UserODB::id])
         }
-        Assert.assertEquals(2, res.size)
+        Assert.assertEquals(3, res.size)
     }
 
     @Test
@@ -35,7 +39,7 @@ class MultiselectTest : BaseTest() {
         val res: List<Triple<String, Long, Long>> = anyDao.all(UserODB::class) {
             val taskName = it[UserODB::task, TaskODB::name]
             it.groupBy(taskName)
-            it.select(taskName, it.max(UserODB::id), it[UserODB::id].count())
+            it.select(taskName, it[UserODB::id].max(), it[UserODB::id].count())
         }
         Assert.assertEquals(2, res.size)
     }
@@ -50,7 +54,7 @@ class MultiselectTest : BaseTest() {
         val res: List<Quadruple<String, Long, Long, Long>> = anyDao.all(UserODB::class) {
             val taskName = it[UserODB::task, TaskODB::name]
             it.groupBy(taskName)
-            it.select(taskName, it.max(UserODB::id), it[UserODB::id].count(), it[UserODB::id].count())
+            it.select(taskName, it[UserODB::id].max(), it[UserODB::id].count(), it[UserODB::id].count())
         }
         Assert.assertEquals(2, res.size)
     }
@@ -78,6 +82,48 @@ class MultiselectTest : BaseTest() {
         Assert.assertEquals(3L, res[1][1])
     }
 
+    @Test
+    fun `should return multiselect (tuple)`() {
+        anyDao.persist(
+                UserODB(email = "email1", task = TaskODB(name = "t1")),
+                UserODB(email = "email2", task = TaskODB(name = "t2")),
+                UserODB(email = "email3", task = TaskODB(name = "t2")))
+
+        var outerName by Delegates.notNull<IExpression<String, *>>()
+        var outerMaxId by Delegates.notNull<IExpression<Long, *>>()
+
+
+        val res: List<TupleWrap> = anyDao.all(UserODB::class) {
+            val taskName = it[UserODB::task, TaskODB::name]
+            val taskid = it[UserODB::task, TaskODB::id]
+            val maxTaskId = it[UserODB::id].max()
+
+            outerName = taskName;
+            outerMaxId = maxTaskId
+            it.groupBy(taskName, taskid)
+            it.orderBy(UserODB::id)
+            it.selectTuple(taskName, maxTaskId, taskid)
+        }
+
+        res.forEach {
+            Assert.assertTrue(it is TupleWrap)
+            Assert.assertEquals(it[0], it[outerName])
+            Assert.assertEquals(it[1], it[outerMaxId])
+
+            Assert.assertTrue(it[outerName] in setOf("t1", "t2", "t3"))
+            it.elements.forEach {
+                Assert.assertNull(it.alias)
+            }
+        }
+
+        Assert.assertEquals(3, res.size)
+
+        Assert.assertEquals("t1", res[0][0])
+        Assert.assertEquals(1L, res[0][1])
+
+        Assert.assertEquals("t2", res[1][0])
+        Assert.assertEquals(3L, res[1][1])
+    }
 
     class UserTaskDTO(val userEmail: String, val userId: Long, val taskName: String)
 

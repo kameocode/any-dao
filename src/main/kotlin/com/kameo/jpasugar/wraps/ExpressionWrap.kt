@@ -13,14 +13,14 @@ import javax.persistence.criteria.Selection
 
 open class ExpressionWrap<E, G> constructor(
         val pc: PathContext<G>,
-        val value: Expression<E>
+        val expression: Expression<E>
 ) :
         ISelectExpressionProvider<E>,
         ISugarQuerySelect<G>, //by pathSelect,
         IExpression<E, G> {
 
-    override fun getSelection(): Selection<*> {
-        return pc.defaultSelection!!.getSelection()
+    override fun getJpaSelection(): Selection<*> {
+        return pc.defaultSelection!!.getJpaSelection()
     }
 
     override fun isDistinct(): Boolean {
@@ -40,32 +40,32 @@ open class ExpressionWrap<E, G> constructor(
        return pc.criteria
     }
     override fun eq(expr: E): ExpressionWrap<E, G> {
-        pc.add({ pc.cb.equal(this.value, expr) })
+        pc.add({ pc.cb.equal(this.expression, expr) })
         return this
     }
 
     override fun eq(expr: IExpression<E, *>): ExpressionWrap<E, G> {
-        pc.add({ pc.cb.equal(this.value, expr.getJpaExpression()) })
+        pc.add({ pc.cb.equal(this.expression, expr.getJpaExpression()) })
         return this
     }
 
     open infix fun notEq(expr: IExpression<E, *>): ExpressionWrap<E, G> {
-        pc.add({ pc.cb.notEqual(this.value, expr.getJpaExpression()) })
+        pc.add({ pc.cb.notEqual(this.expression, expr.getJpaExpression()) })
         return this
     }
 
     open infix fun isIn(list: List<E>): ExpressionWrap<E, G> {
-        pc.add({ value.`in`(list) })
+        pc.add({ expression.`in`(list) })
         return this
     }
 
     open infix fun isIn(expr: ExpressionWrap<E, *>): ExpressionWrap<E, G> {
-        pc.add({ value.`in`(expr.value) })
+        pc.add({ expression.`in`(expr.expression) })
         return this
     }
 
     open infix fun isIn(expr: SubqueryWrap<E, *>): ExpressionWrap<E, G> {
-        pc.add({ value.`in`(expr.subquery) })
+        pc.add({ expression.`in`(expr.subquery) })
         return this
     }
 
@@ -82,11 +82,11 @@ open class ExpressionWrap<E, G> constructor(
     val cb = pc.cb
 
     override fun getDirectSelection(): ISugarQuerySelect<E> {
-        return SelectWrap(value)
+        return SelectWrap(expression)
     }
 
     override fun getJpaExpression(): Expression<E> {
-        return value
+        return expression
     }
 
     fun groupBy(vararg expr: IExpression<*, *>): ExpressionWrap<E, G> {
@@ -100,7 +100,7 @@ open class ExpressionWrap<E, G> constructor(
     }
 
     fun count(): ExpressionWrap<Long, G> {
-        return ExpressionWrap(pc, pc.cb.count(value))
+        return ExpressionWrap(pc, pc.cb.count(expression))
     }
 
 }

@@ -3,6 +3,7 @@ package com.kameo.jpasugar.test
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
+import com.kameo.jpasugar.wraps.like
 import org.junit.Assert
 import org.junit.Test
 
@@ -26,6 +27,26 @@ class UpdateTest : BaseTest() {
         Assert.assertEquals(3, res)
         anyDao.all(UserODB::class).forEach {
             Assert.assertEquals("email0", it.email)
+        }
+    }
+
+    @Test
+    fun `should update nullable fields`() {
+        anyDao.persist(
+                UserODB(email = "email1", task = TaskODB(name = "task1")),
+                UserODB(email = "email2", task = TaskODB(name = "task2")),
+                UserODB(email = "email3", task = TaskODB(name = "task3")))
+
+
+        val res = anyDao.update(UserODB::class) {
+            it.set(UserODB::emailNullable, "email0")
+        }
+
+        anyDao.clear()
+
+        Assert.assertEquals(3, res)
+        anyDao.all(UserODB::class).forEach {
+            Assert.assertEquals("email0", it.emailNullable)
         }
     }
 

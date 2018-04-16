@@ -3,6 +3,7 @@ package com.kameo.jpasugar.test
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
+import com.kameo.jpasugar.wraps.like
 import org.junit.Assert
 import org.junit.Test
 

@@ -3,7 +3,9 @@ package com.kameo.jpasugar.test
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
+import com.kameo.jpasugar.wraps.JoinWrap
 import com.kameo.jpasugar.wraps.SubqueryWrap
+import com.kameo.jpasugar.wraps.like
 import org.junit.Assert
 import org.junit.Test
 import javax.persistence.criteria.Expression
@@ -38,7 +40,7 @@ class JpaAccessTest : BaseTest() {
 
 
         val res3 = anyDao.all(UserODB::class) {
-            val task: Join<Any, TaskODB> = it.join(UserODB::allTasks).getJpaExpression();
+            val task: Join<Any, TaskODB> = it.joinList(UserODB::allTasks).getJpaExpression();
             Assert.assertEquals(task.joinType, JoinType.INNER)
 
             it predicate { cb ->
@@ -55,7 +57,7 @@ class JpaAccessTest : BaseTest() {
         Assert.assertEquals(0, res4.size)
 
         val res5 = anyDao.all(UserODB::class) {
-            it.join(UserODB::allTasks) {
+            it.joinList(UserODB::allTasks) {
                 val expr = it.getJpaExpression();
                 it predicate { cb ->
                     cb.equal(expr.get<String>("name"), "allTask2")

@@ -9,6 +9,7 @@ import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.Order
 import javax.persistence.criteria.Predicate
 import javax.persistence.criteria.Root
+import kotlin.reflect.KFunction1
 
 
 abstract class PathContext<G>
@@ -120,6 +121,8 @@ constructor(
     }
 
     protected fun getGroupBy(): List<IExpression<*, *>> = groupByList ?: emptyList()
+
+
 
 
 }
