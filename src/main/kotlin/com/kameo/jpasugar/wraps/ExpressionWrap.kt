@@ -2,7 +2,8 @@ package com.kameo.jpasugar.wraps
 
 import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.ISelectExpressionProvider
-import com.kameo.jpasugar.ISugarQuerySelect
+import com.kameo.jpasugar.KRoot
+import com.kameo.jpasugar.KSelect
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
 import javax.persistence.criteria.CommonAbstractCriteria
@@ -17,7 +18,7 @@ open class ExpressionWrap<E, G> constructor(
         val expression: Expression<E>
 ) :
         ISelectExpressionProvider<E>,
-        ISugarQuerySelect<G>, //by pathSelect,
+        KSelect<G>, //by pathSelect,
         IExpression<E, G> {
     val cb = pc.cb
 
@@ -27,10 +28,6 @@ open class ExpressionWrap<E, G> constructor(
 
     override fun isDistinct(): Boolean {
         return pc.defaultSelection!!.isDistinct()
-    }
-
-    override fun isSingle(): Boolean {
-        return pc.defaultSelection!!.isSingle()
     }
 
     open infix fun predicate(predicate: ExpressionWrap<E, G>.(cb: CriteriaBuilder) -> Predicate?): ExpressionWrap<E, G> {
@@ -45,6 +42,10 @@ open class ExpressionWrap<E, G> constructor(
     fun alias(alias: String): ExpressionWrap<E, G> {
         getJpaExpression().alias(alias)
         return this
+    }
+
+    fun <T> literal(t: T): ExpressionWrap<T, G> {
+        return ExpressionWrap(pc, pc.cb.literal(t))
     }
 
     override infix fun eq(expr: E): ExpressionWrap<E, G> {
@@ -66,15 +67,6 @@ open class ExpressionWrap<E, G> constructor(
         pc.add({ cb.notEqual(this.expression, expr.getJpaExpression()) })
         return this
     }
-
-/*    fun pred(expr:E): Expression<Boolean> {
-        return pc.cb.equal(this.expression, expr)
-    }*/
-    /*  fun equals(expr: E): Boolean {
-           pc.add({ cb.equal(expression, expr) })
-           return true
-       }*/
-
 
     open infix fun isIn(list: List<E>): ExpressionWrap<E, G> {
         pc.add({ expression.`in`(list) })
@@ -103,7 +95,7 @@ open class ExpressionWrap<E, G> constructor(
 
 
 
-    override fun getDirectSelection(): ISugarQuerySelect<E> {
+    override fun getDirectSelection(): KSelect<E> {
         return SelectWrap(expression)
     }
 
@@ -130,4 +122,5 @@ open class ExpressionWrap<E, G> constructor(
         val expression: Expression<F> = cb.function(functionName, clz.java, expr)
         return ExpressionWrap(pc, expression)
     }
+
 }

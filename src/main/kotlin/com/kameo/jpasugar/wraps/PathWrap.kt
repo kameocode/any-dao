@@ -1,16 +1,19 @@
 package com.kameo.jpasugar.wraps
 
 
+import antlr.build.ANTLR.root
 import com.kameo.jpasugar.AnyDAO
 import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.ISelectExpressionProvider
-import com.kameo.jpasugar.ISugarQuerySelect
+import com.kameo.jpasugar.KClause
 import com.kameo.jpasugar.KRoot
+import com.kameo.jpasugar.KSelect
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
 import com.kameo.jpasugar.context.QueryPathContext
 import com.kameo.jpasugar.context.SubqueryPathContext
 import com.kameo.jpasugar.unaryPlus
+import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.CriteriaQuery
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Path
@@ -42,7 +45,7 @@ open class PathWrap<E, G> constructor(
         return pc.groupBy(exprs.map { ExpressionWrap<E, G>(pc, root.get(it.name)) }.toTypedArray())
     }
 
-    override fun getDirectSelection(): ISugarQuerySelect<E> {
+    override fun getDirectSelection(): KSelect<E> {
         return SelectWrap(root)
     }
 
@@ -57,15 +60,15 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    infix fun <F> select(pw: KMutableProperty1<E, F>): ISugarQuerySelect<F> {
+    infix fun <F> select(pw: KMutableProperty1<E, F>): KSelect<F> {
         return select(get(pw))
     }
 
-    infix fun <F> select(pw: ExpressionWrap<F, G>): ISugarQuerySelect<F> {
+    infix fun <F> select(pw: ExpressionWrap<F, G>): KSelect<F> {
         return pw.getDirectSelection()
     }
 
-    infix fun <F> selectDistinct(pw: ExpressionWrap<F, G>): ISugarQuerySelect<F> {
+    infix fun <F> selectDistinct(pw: ExpressionWrap<F, G>): KSelect<F> {
         return SelectWrap(pw.getDirectSelection().getJpaSelection() as Selection<F>, true)
     }
 
@@ -243,6 +246,8 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
+
+
     override infix fun eq(expr: E): PathWrap<E, G> {
         super.eq(expr)
         return this
@@ -318,7 +323,7 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (KSelect<E>)): PathWrap<E, G> {
         newAnd()
         isIn(subqueryFrom(clz, subqueryQuery))
         finishClause()
@@ -371,7 +376,7 @@ open class PathWrap<E, G> constructor(
     class UseGetListOnJoinInstead
 
 
-    fun <E : Any, RESULT> subqueryFrom(clz: KClass<E>, query: RootWrap<E, E>.(RootWrap<E, E>) -> (ISugarQuerySelect<RESULT>)): SubqueryWrap<RESULT, G> {
+    fun <E : Any, RESULT> subqueryFrom(clz: KClass<E>, query: RootWrap<E, E>.(RootWrap<E, E>) -> (KSelect<RESULT>)): SubqueryWrap<RESULT, G> {
         val criteriaQuery = pc.criteria as CriteriaQuery<E>
         val subqueryPc = SubqueryPathContext(clz.java, pc.em, pc as QueryPathContext<G>, criteriaQuery.subquery(clz.java) as Subquery<G>)
         val returnedExpression = subqueryPc.invokeQuery(query)
@@ -380,14 +385,14 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    fun <J : Any> exists(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> exists(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (KSelect<E>)): PathWrap<E, G> {
         newAnd()
         exists(subqueryFrom(clz, subqueryQuery))
         finishClause()
         return this
     }
 
-    fun <J : Any> notExists(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (ISugarQuerySelect<E>)): PathWrap<E, G> {
+    fun <J : Any> notExists(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (KSelect<E>)): PathWrap<E, G> {
         newAnd()
         notExists(subqueryFrom(clz, subqueryQuery))
         finishClause()
@@ -424,6 +429,10 @@ open class PathWrap<E, G> constructor(
     @JvmName("getNullable2")
     operator fun <F, F2> get(sa: KFunction1<E, F?>, sa2: KFunction1<F, F2>): PathWrap<F2, G> = get(+sa, +sa2)
 
+    infix fun applyClause(query: KClause<E>): PathWrap<E, G> {
+        query.invoke(this as PathWrap<E, Any>, this as PathWrap<E, Any>)
+        return this;
+    }
 
 }
 
@@ -447,7 +456,6 @@ infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) ->
     return orClause
 }
 
-
 /**
  * Number extension functions
  */
@@ -458,6 +466,13 @@ fun <G, NUM, T : PathWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> where NUM : N
 fun <G, NUM, T : PathWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G> where NUM : Number, NUM : Comparable<NUM> {
     return ExpressionWrap<NUM, G>(pc, pc.cb.min(root))
 }
+fun <G, NUM, T : PathWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G> where NUM : Number, NUM : Comparable<NUM> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.sum(root))
+}
+fun <G, NUM, T : PathWrap<NUM, G>> T.ave(): ExpressionWrap<Double, G> where NUM : Number, NUM : Comparable<NUM> {
+    return ExpressionWrap(pc, pc.cb.avg(root))
+}
+
 
 fun <G, NUM, T : PathWrap<NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> where NUM : Number, NUM : Comparable<NUM> {
     return ExpressionWrap<Int, G>(pc, pc.cb.mod(root as Expression<Int>, y))
@@ -468,7 +483,7 @@ infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.greaterThan(f: NUM)
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.greaterThan(f: PathWrap<NUM, G>): PathWrap<NUM, G> {
+infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.greaterThan(f: ExpressionWrap<NUM, *>): PathWrap<NUM, G> {
     pc.add({ cb.greaterThan(root, f.getJpaExpression()) })
     return this
 }
@@ -478,7 +493,7 @@ infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.greaterThanOrEqualT
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.greaterThanOrEqualTo(f: PathWrap<NUM, G>): PathWrap<NUM, G> {
+infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.greaterThanOrEqualTo(f: ExpressionWrap<NUM, *>): PathWrap<NUM, G> {
     pc.add({ cb.greaterThanOrEqualTo(root, f.getJpaExpression()) })
     return this
 }
@@ -488,7 +503,7 @@ infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.lessThan(f: NUM): P
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.lessThan(f: PathWrap<NUM, G>): PathWrap<NUM, G> {
+infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.lessThan(f: ExpressionWrap<NUM, *>): PathWrap<NUM, G> {
     pc.add({ cb.lessThan(root, f.getJpaExpression()) })
     return this
 }
@@ -498,8 +513,17 @@ infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.lessThanOrEqualTo(f
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.lessThanOrEqualTo(f: PathWrap<NUM, G>): PathWrap<NUM, G> {
+infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.lessThanOrEqualTo(f: ExpressionWrap<NUM, *>): PathWrap<NUM, G> {
     pc.add({ cb.lessThanOrEqualTo(root, f.getJpaExpression()) })
+    return this
+}
+infix fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.between(pair: Pair<NUM, NUM>): PathWrap<NUM, G> {
+    pc.add({ cb.between(root, pair.first, pair.second) })
+    return this
+}
+@JvmName("betweenExpression")
+fun <G, NUM : Comparable<NUM>, T : PathWrap<NUM, G>> T.between(pair: Pair<ExpressionWrap<NUM, *>, ExpressionWrap<NUM, *>>): PathWrap<NUM, G> {
+    pc.add({ cb.between(root, pair.first.getJpaExpression(), pair.second.getJpaExpression()) })
     return this
 }
 
@@ -525,6 +549,34 @@ fun <G, T : ExpressionWrap<String, G>> T.lower(): ExpressionWrap<String, G> {
 
 fun <G, T : ExpressionWrap<String, G>> T.upper(): ExpressionWrap<String, G> {
     return ExpressionWrap(pc, pc.cb.upper(expression))
+}
+fun <G, T : PathWrap<String, G>> T.length(): ExpressionWrap<Int, G> {
+    return ExpressionWrap(pc, pc.cb.length(root as (Expression<String>)))
+}
+
+fun <G, T : PathWrap<String, G>> T.substring(from: Int): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from))
+}
+fun <G, T : PathWrap<String, G>> T.substring(from: Int, len: Int): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from, len))
+}
+fun <G, T : PathWrap<String, G>> T.substring(from: ExpressionWrap<Int, *>): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from.getJpaExpression()))
+}
+fun <G, T : PathWrap<String, G>> T.substring(from: ExpressionWrap<Int, *>, len: ExpressionWrap<Int, *>): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from.getJpaExpression(), len.getJpaExpression()))
+}
+fun <G, T : PathWrap<String, G>> T.trim(): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.trim(root as (Expression<String>)))
+}
+fun <G, T : PathWrap<String, G>> T.trim(t: Char): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.trim(t, root as (Expression<String>)))
+}
+fun <G, T : PathWrap<String, G>> T.trim(ts: CriteriaBuilder.Trimspec, t: Char): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.trim(ts, t, root as (Expression<String>)))
+}
+fun <G, T : PathWrap<String, G>> T.locate(pattern: String): ExpressionWrap<Int, G> {
+    return ExpressionWrap(pc, pc.cb.locate(root as (Expression<String>), pattern))
 }
 
 fun <G, T : PathWrap<String, G>> T.isNullOrContains(f: Any): PathWrap<String, G> {

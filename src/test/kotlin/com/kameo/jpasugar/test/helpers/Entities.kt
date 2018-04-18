@@ -81,5 +81,7 @@ data class AddressODB(@Id
 @Entity
 data class TaskODB(@Id
                    @GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
-                   val id: Long = 0, val name: String);
+                   val id: Long = 0, val name: String,
+                   @ManyToOne(cascade = [CascadeType.ALL])
+                   var address: AddressODB? = null);
 

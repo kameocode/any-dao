@@ -3,6 +3,8 @@ package com.kameo.jpasugar.test
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
+import com.kameo.jpasugar.wraps.ExpressionWrap
+import com.kameo.jpasugar.wraps.between
 import com.kameo.jpasugar.wraps.greaterThan
 import com.kameo.jpasugar.wraps.lessThan
 import com.kameo.jpasugar.wraps.lessThanOrEqualTo
@@ -101,7 +103,7 @@ class DatesTest : BaseTest() {
     @Test
     fun `should search for Date (timestamp)`() {
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), timestamp = Date())
-        val u2 = UserODB(email = "email2", task = TaskODB(name = "task1"), timestamp = Date(0))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task1"), timestamp = Date(1))
         anyDao.persist(u1, u2)
 
         val res = anyDao.all(UserODB::class) {
@@ -110,9 +112,19 @@ class DatesTest : BaseTest() {
         Assert.assertEquals(setOf(u1, u2).map { it.id }.toSet(), res.map { it.id }.toSet())
 
         val res2 = anyDao.all(UserODB::class) {
-            it[UserODB::timestamp] lessThanOrEqualTo Date(0)
+            it[UserODB::timestamp] lessThanOrEqualTo Date(1)
         }
         Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res2.map { it.id }.toSet())
+
+        val res3 = anyDao.all(UserODB::class) {
+            it[UserODB::timestamp] between Pair(Date(0), Date(1000))
+        }
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res3.map { it.id }.toSet())
+
+        val res4 = anyDao.all(UserODB::class) {
+            it[UserODB::timestamp] between (Date(0) to Date(1000))
+        }
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res4.map { it.id }.toSet())
     }
 
 
@@ -146,6 +158,17 @@ class DatesTest : BaseTest() {
         Assert.assertEquals(setOf(2001), res3.toSet())
     }
 
+    @Test
+    fun `should work with current timestamp`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), timestamp = Date(0))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task1"), timestamp = Date(System.currentTimeMillis()+10000))
+        anyDao.persist(u1, u2)
 
-    //TODO https://www.objectdb.com/java/jpa/query/jpql/date
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::timestamp] lessThan ExpressionWrap(pc, cb.currentDate()) as ExpressionWrap<Date, *>
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res1.map { it.id }.toSet())
+    }
+
+
 }

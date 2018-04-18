@@ -1,5 +1,6 @@
 package com.kameo.jpasugar.wraps
 
+import com.kameo.jpasugar.KFromClause
 import com.kameo.jpasugar.QueryUnit
 import com.kameo.jpasugar.context.PathContext
 import com.kameo.jpasugar.unaryPlus
@@ -100,6 +101,11 @@ open class FromWrap<E, G> constructor(val pw: PathContext<G>,
             joinMap(+sa, joinType, andClause)
 
 
-    //TODO license
+    @JvmName("applyFrom")
+    infix fun applyClause(query: KFromClause<E>): FromWrap<E, G> {
+        query.invoke(this as FromWrap<E, Any>, this as FromWrap<E, Any>)
+        return this;
+    }
+
 
 }

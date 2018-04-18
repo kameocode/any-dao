@@ -1,5 +1,7 @@
 package com.kameo.jpasugar;
 
+import com.kameo.jpasugar.wraps.FromWrap
+import com.kameo.jpasugar.wraps.JoinWrap
 import com.kameo.jpasugar.wraps.PathWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import java.io.Serializable
@@ -10,7 +12,12 @@ import javax.persistence.criteria.Selection
 import kotlin.reflect.KFunction1
 import kotlin.reflect.KProperty1
 
-typealias QueryUnit<T> = T.(T) -> Unit;
+
+typealias KRoot<E> = RootWrap<E, E>
+typealias QueryUnit<T> = T.(T) -> Unit
+typealias KQuery<E, RESULT> = KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>)
+typealias KClause<E> = PathWrap<E, Any>.(PathWrap<E, Any>) -> Unit
+typealias KFromClause<E> = FromWrap<E, Any>.(FromWrap<E, Any>) -> Unit
 
 interface IExpression<F, G> {
     fun getJpaExpression(): Expression<F>
@@ -51,23 +58,15 @@ data class Quadruple<out A, out B, out C, out D>(
     override fun toString(): String = "($first, $second, $third, $fourth)"
 }
 
-typealias KRoot<E> = RootWrap<E, E>
-typealias KPath<E> = PathWrap<E, E>
 
-
-interface ISugarQuerySelect<E> {
+interface KSelect<E> {
     fun getJpaSelection(): Selection<*>
-    fun isSingle(): Boolean
     fun isDistinct(): Boolean
 }
 
-class SelectWrap<E> constructor(val select: Selection<E>, val distinct: Boolean = false) : ISugarQuerySelect<E> {
+class SelectWrap<E> constructor(val select: Selection<E>, val distinct: Boolean = false) : KSelect<E> {
     override fun getJpaSelection(): Selection<E> {
         return select
-    }
-
-    override fun isSingle(): Boolean {
-        return distinct
     }
 
     override fun isDistinct(): Boolean {
@@ -76,7 +75,7 @@ class SelectWrap<E> constructor(val select: Selection<E>, val distinct: Boolean 
 }
 
 interface ISelectExpressionProvider<E> {
-    fun getDirectSelection(): ISugarQuerySelect<E>
+    fun getDirectSelection(): KSelect<E>
 }
 
 class TupleWrap(val arr: Array<Any>, val elementList: MutableList<out TupleElement<*>>) : Tuple {
@@ -90,7 +89,7 @@ class TupleWrap(val arr: Array<Any>, val elementList: MutableList<out TupleEleme
     }
 
     override fun <X : Any?> get(tupleElement: TupleElement<X>): X {
-        val index: Int = elements.indexOf(tupleElement as Any)
+        val index: Int = elements.indexOf(tupleElement)
         return arr[index] as X
     }
 
@@ -116,7 +115,7 @@ class TupleWrap(val arr: Array<Any>, val elementList: MutableList<out TupleEleme
 }
 
 data class Page(val pageSize: Int = 10, val offset: Int = 0) {
-    fun next() = Page(pageSize, offset + pageSize);
+    fun next() = Page(pageSize, offset + pageSize)
 }
 
 abstract class PagesResult<E>(val pageSize: Int) {

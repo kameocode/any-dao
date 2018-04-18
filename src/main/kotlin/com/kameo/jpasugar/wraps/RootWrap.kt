@@ -3,12 +3,8 @@ package com.kameo.jpasugar.wraps
 import com.kameo.jpasugar.context.PathContext
 import javax.persistence.criteria.CriteriaQuery
 import javax.persistence.criteria.CriteriaUpdate
-import javax.persistence.criteria.From
-import javax.persistence.criteria.Join
 import javax.persistence.criteria.Root
 import kotlin.reflect.KClass
-
-
 
 
 open class RootWrap<E, G> constructor(pw: PathContext<G>,
@@ -18,7 +14,6 @@ open class RootWrap<E, G> constructor(pw: PathContext<G>,
     override fun getJpaExpression(): Root<E> {
         return root
     }
-
 
 
     fun <F : Any> from(sa: KClass<F>): RootWrap<F, G> {

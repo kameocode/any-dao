@@ -79,7 +79,6 @@ class JpaAccessTest : BaseTest() {
         }
         Assert.assertEquals("Access to subquery should work", 1, res6.size)
 
-
         val res7 = anyDao.all(UserODB::class) {
             val subquery: SubqueryWrap<TaskODB, UserODB> = it.subqueryFrom(TaskODB::class) {
                 it[TaskODB::name] like "task1"

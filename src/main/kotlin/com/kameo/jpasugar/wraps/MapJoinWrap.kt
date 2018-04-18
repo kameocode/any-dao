@@ -3,7 +3,6 @@ package com.kameo.jpasugar.wraps
 import com.kameo.jpasugar.context.PathContext
 import javax.persistence.criteria.MapJoin
 
-
 class MapJoinWrap<KEY, VALUE, G> constructor(pw: PathContext<G>,
                                              override val root: MapJoin<Any, KEY, VALUE>)
     : JoinWrap<VALUE, G>(pw, root) {
@@ -17,6 +16,9 @@ class MapJoinWrap<KEY, VALUE, G> constructor(pw: PathContext<G>,
     fun value(): PathWrap<VALUE, G> =
             PathWrap(pc, getJpaExpression().value())
 
-    //TODO entry
+    fun entry(): ExpressionWrap<MutableMap.MutableEntry<KEY, VALUE>, G> {
+        val jpaEntry = getJpaExpression().entry()
+        return ExpressionWrap(pc, jpaEntry)
+    }
 }
 

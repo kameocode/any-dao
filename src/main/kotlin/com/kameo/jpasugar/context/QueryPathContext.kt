@@ -2,7 +2,7 @@ package com.kameo.jpasugar.context
 
 
 import com.kameo.jpasugar.AnyDAO
-import com.kameo.jpasugar.ISugarQuerySelect
+import com.kameo.jpasugar.KSelect
 import com.kameo.jpasugar.KRoot
 import com.kameo.jpasugar.Quadruple
 import com.kameo.jpasugar.SelectWrap
@@ -19,7 +19,7 @@ class QueryPathContext<G>(clz: Class<*>,
                           override val criteria: CriteriaQuery<G> = em.criteriaBuilder.createQuery(clz) as CriteriaQuery<G>)
     : PathContext<G>(em, criteria) {
 
-    private lateinit var selector: ISugarQuerySelect<*> // set after execution (invokeQuery)
+    private lateinit var selector: KSelect<*> // set after execution (invokeQuery)
 
     init {
         root = criteria.from(clz as Class<Any>)
@@ -27,7 +27,7 @@ class QueryPathContext<G>(clz: Class<*>,
         rootWrap = RootWrap(this, root)
     }
 
-    fun <RESULT, E> invokeQuery(query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>): TypedQuery<RESULT> {
+    fun <RESULT, E> invokeQuery(query: KRoot<E>.(KRoot<E>) -> KSelect<RESULT>): TypedQuery<RESULT> {
         selector = query.invoke(rootWrap as KRoot<E>, rootWrap as KRoot<E>)
         val sell = selector.getJpaSelection() as Selection<out G>
         criteria.select(sell).distinct(selector.isDistinct())
@@ -86,7 +86,7 @@ class QueryPathContext<G>(clz: Class<*>,
         if (selector is AnyDAO.PathArraySelect) {
             return res;
         }
-        if (selector is AnyDAO.PathTupleSelect && res.isNotEmpty() && !selector.isSingle() && res.first() is Array<*>) {
+        if (selector is AnyDAO.PathTupleSelect && res.isNotEmpty() && res.first() is Array<*>) {
             val rows = res as List<Array<Any>>
             val elementList = (selector as AnyDAO.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
             return rows.map { TupleWrap(it, elementList) as RESULT };

@@ -1,6 +1,6 @@
 package com.kameo.jpasugar.context
 
-import com.kameo.jpasugar.ISugarQuerySelect
+import com.kameo.jpasugar.KSelect
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import com.kameo.jpasugar.wraps.SubqueryWrap
@@ -15,7 +15,7 @@ class SubqueryPathContext<G>(clz: Class<*>,
                              val subquery: Subquery<G>)
     : PathContext<G>(em, parentContext.criteria) {
 
-    lateinit var selector: ISugarQuerySelect<*> // set after execution
+    lateinit var selector: KSelect<*> // set after execution
 
 
     init {
@@ -25,7 +25,7 @@ class SubqueryPathContext<G>(clz: Class<*>,
         rootWrap = RootWrap(this, root)
     }
 
-    fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>).(RootWrap<E, E>) -> ISugarQuerySelect<RESULT>): SubqueryWrap<RESULT, E> {
+    fun <RESULT, E> invokeQuery(query: (RootWrap<E, E>).(RootWrap<E, E>) -> KSelect<RESULT>): SubqueryWrap<RESULT, E> {
         selector = query.invoke(rootWrap as RootWrap<E, E>, rootWrap as RootWrap<E, E>)
         val sell = selector.getJpaSelection() as Expression<G>
         subquery.select(sell).distinct(selector.isDistinct())

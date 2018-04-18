@@ -1,5 +1,7 @@
 package com.kameo.jpasugar.test
 
+import com.kameo.jpasugar.Page
+import com.kameo.jpasugar.KQuery
 import com.kameo.jpasugar.test.helpers.AddressODB
 import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
@@ -13,6 +15,7 @@ import com.kameo.jpasugar.wraps.or
 import org.junit.Assert
 import org.junit.Test
 import javax.persistence.NoResultException
+import javax.persistence.NonUniqueResultException
 
 
 class FindAllTest : BaseTest() {
@@ -163,7 +166,7 @@ class FindAllTest : BaseTest() {
         val u2: UserODB? = anyDao.first(UserODB::class) { it[UserODB::email] like "email1" }
 
         try {
-            val uu1: UserODB = anyDao.one(UserODB::class) { it[UserODB::email] like "email4" }
+            anyDao.one(UserODB::class) { it[UserODB::email] like "email4" }
             Assert.fail()
         } catch (th: NoResultException) {
             // ignore
@@ -231,6 +234,7 @@ class FindAllTest : BaseTest() {
         })
         Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
     }
+
 
 }
 
