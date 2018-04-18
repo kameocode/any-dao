@@ -165,10 +165,10 @@ class DatesTest : BaseTest() {
         anyDao.persist(u1, u2)
 
         val res1 = anyDao.all(UserODB::class) {
-            it[UserODB::timestamp] lessThan ExpressionWrap(pc, cb.currentDate()) as ExpressionWrap<Date, *>
+            it[UserODB::timestamp] lessThan expression(cb.currentDate()) as ExpressionWrap<Date, *>
         }
         Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res1.map { it.id }.toSet())
     }
 
-
+    //TODO https://www.objectdb.com/java/jpa/query/jpql/date
 }

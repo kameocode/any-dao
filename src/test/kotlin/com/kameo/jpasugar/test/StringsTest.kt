@@ -4,6 +4,8 @@ import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
 import com.kameo.jpasugar.wraps.concat
+import com.kameo.jpasugar.wraps.contains
+import com.kameo.jpasugar.wraps.isNullOrContains
 import com.kameo.jpasugar.wraps.length
 import com.kameo.jpasugar.wraps.locate
 import com.kameo.jpasugar.wraps.lower
@@ -126,7 +128,22 @@ class StringsTest : BaseTest() {
         Assert.assertEquals(setOf(2, 1), res2.toSet())
     }
 
-    //TODO https://www.objectdb.com/java/jpa/query/jpql/date
-    //TODO having
+    @Test
+    fun `should search by contains function`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), emailNullable = null)
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task1"), emailNullable = "aabbaa")
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task1"), emailNullable = "aaaaaa")
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::emailNullable] isNullOrContains "bb"
+        }
+        Assert.assertEquals(setOf(u1, u2).map { it.id }.toSet(), res1.map { it.id }.toSet())
+
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::emailNullable] contains  "bb"
+        }
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res2.map { it.id }.toSet())
+    }
 
 }

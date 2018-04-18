@@ -2,7 +2,6 @@ package com.kameo.jpasugar.wraps
 
 import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.ISelectExpressionProvider
-import com.kameo.jpasugar.KRoot
 import com.kameo.jpasugar.KSelect
 import com.kameo.jpasugar.SelectWrap
 import com.kameo.jpasugar.context.PathContext
@@ -18,12 +17,12 @@ open class ExpressionWrap<E, G> constructor(
         val expression: Expression<E>
 ) :
         ISelectExpressionProvider<E>,
-        KSelect<G>, //by pathSelect,
+        KSelect<G>,
         IExpression<E, G> {
     val cb = pc.cb
 
-    override fun getJpaSelection(): Selection<*> {
-        return pc.defaultSelection!!.getJpaSelection()
+    override fun getJpaSelection(): Selection<E> {
+        return pc.defaultSelection!!.getJpaSelection() as Selection<E>
     }
 
     override fun isDistinct(): Boolean {
@@ -42,6 +41,10 @@ open class ExpressionWrap<E, G> constructor(
     fun alias(alias: String): ExpressionWrap<E, G> {
         getJpaExpression().alias(alias)
         return this
+    }
+
+    fun <F> expression(expr: Expression<F>): ExpressionWrap<F, G> {
+        return ExpressionWrap(pc, expr)
     }
 
     fun <T> literal(t: T): ExpressionWrap<T, G> {
@@ -92,7 +95,6 @@ open class ExpressionWrap<E, G> constructor(
         pc.add({ cb.not(cb.exists(expr.subquery)) })
         return this
     }
-
 
 
     override fun getDirectSelection(): KSelect<E> {

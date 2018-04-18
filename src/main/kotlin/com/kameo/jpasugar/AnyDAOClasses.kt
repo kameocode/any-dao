@@ -1,7 +1,6 @@
 package com.kameo.jpasugar;
 
 import com.kameo.jpasugar.wraps.FromWrap
-import com.kameo.jpasugar.wraps.JoinWrap
 import com.kameo.jpasugar.wraps.PathWrap
 import com.kameo.jpasugar.wraps.RootWrap
 import java.io.Serializable
