@@ -85,7 +85,7 @@ open class PathWrap<E, G> constructor(
                 pw2.getDirectSelection(),
                 pw3.getDirectSelection(),
                 pw4.getDirectSelection(),
-                distinct, pc.cb)
+                distinct, cb)
     }
 
     fun selectArray(vararg pw1: ISelectExpressionProvider<*>,
@@ -103,19 +103,29 @@ open class PathWrap<E, G> constructor(
     }
 
     infix fun eqId(id: Long): PathWrap<E, G> {
-        pc.add({ pc.cb.equal(root.get<Path<Long>>("id"), id) })
+        pc.add({ cb.equal(root.get<Path<Long>>("id"), id) })
         return this
     }
 
-    // should be forbidden on root....
     fun isNull(): PathWrap<E, G> {
-        pc.add({ pc.cb.isNull(root) })
+        pc.add({ cb.isNull(root) })
+        return this
+    }
+
+    fun isNotNull(): PathWrap<E, G> {
+        pc.add({ cb.isNotNull(root) })
         return this
     }
 
     @JvmName("isNullInfix")
     infix fun isNull(p: () -> Unit): PathWrap<E, G> {
-        pc.add({ pc.cb.isNull(root) })
+        pc.add({ cb.isNull(root) })
+        return this
+    }
+
+    @JvmName("isNotNullInfix")
+    infix fun isNotNull(p: () -> Unit): PathWrap<E, G> {
+        pc.add({ cb.isNotNull(root) })
         return this
     }
 
@@ -152,16 +162,20 @@ open class PathWrap<E, G> constructor(
 
     fun newOr(): ClousureWrap<E, G> {
         val list = mutableListOf<() -> Predicate?>()
-
-
         val pw = ClousureWrap(pc, root)
-
-
         pc.add({ calculateOr(list) })
         pc.stackNewArray(list)
         return pw
     }
 
+    fun internalNot(notClause: PathWrap<E, G>.(PathWrap<E, G>) -> Unit): PathWrap<E, G> {
+        val list = mutableListOf<() -> Predicate?>()
+        pc.add({ calculateNot(list) })
+        pc.stackNewArray(list)
+        notClause.invoke(this, this)
+        pc.unstackArray()
+        return this
+    }
 
     fun internalOr(orClause: PathWrap<E, G>.(PathWrap<E, G>) -> Unit): PathWrap<E, G> {
         val list = mutableListOf<() -> Predicate?>()
@@ -197,6 +211,16 @@ open class PathWrap<E, G> constructor(
             null
     }
 
+    private fun calculateNot(list: MutableList<() -> Predicate?>): Predicate? {
+        val predicates = toPredicates(list)
+        return if (predicates.isNotEmpty() && predicates.size == 1)
+            cb.not(predicates[0])
+        else if (predicates.isNotEmpty())
+            cb.not(calculateAnd(list))
+        else
+            null
+    }
+
     private fun calculateAnd(list: MutableList<() -> Predicate?>): Predicate? {
         val predicates = toPredicates(list)
         return if (predicates.isNotEmpty())
@@ -205,7 +229,7 @@ open class PathWrap<E, G> constructor(
             null
     }
 
-    private fun toPredicates(list: MutableList<() -> Predicate?>): MutableList<Predicate> {
+    protected fun toPredicates(list: MutableList<() -> Predicate?>): MutableList<Predicate> {
         val predicates = list
                 .asSequence()
                 .mapNotNull { it.invoke() }
@@ -224,6 +248,22 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
+    override infix fun eq(expr: IExpression<E, *>): PathWrap<E, G> {
+        super.eq(expr)
+        return this
+    }
+
+    override infix fun notEq(expr: E): PathWrap<E, G> {
+        super.notEq(expr)
+        return this
+    }
+
+    override infix fun notEq(expr: IExpression<E, *>): PathWrap<E, G> {
+        super.notEq(expr)
+        return this
+    }
+
+
     fun <F> eq(sa: SingularAttribute<E, F>, f: F): PathWrap<E, G> {
         pc.add { cb.equal(root.get(sa), f) }
         return this
@@ -234,12 +274,10 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-
     fun <F> eqId(sa: KProperty1<E, F>, id: Long): PathWrap<E, G> {
         pc.add({ cb.equal(root.get<Path<F>>(sa.name).get<Long>("id"), id) })
         return this
     }
-
 
     fun <F> eq(exp1: ExpressionWrap<F, G>, f: F): PathWrap<E, G> {
         pc.add({ cb.equal(exp1.getJpaExpression(), f) })
@@ -264,10 +302,6 @@ open class PathWrap<E, G> constructor(
         return cb.equal(root.get<Path<Long>>("id"), id)
     }
 
-    override infix fun notEq(expr: IExpression<E, *>): PathWrap<E, G> {
-        super.notEq(expr)
-        return this
-    }
 
     override infix fun isIn(list: List<E>): PathWrap<E, G> {
         super.isIn(list)
@@ -337,11 +371,6 @@ open class PathWrap<E, G> constructor(
     class UseGetListOnJoinInstead
 
 
-    infix fun notEq(f: E): PathWrap<E, G> {
-        pc.add { cb.notEqual(root, f) }
-        return this
-    }
-
     fun <E : Any, RESULT> subqueryFrom(clz: KClass<E>, query: RootWrap<E, E>.(RootWrap<E, E>) -> (ISugarQuerySelect<RESULT>)): SubqueryWrap<RESULT, G> {
         val criteriaQuery = pc.criteria as CriteriaQuery<E>
         val subqueryPc = SubqueryPathContext(clz.java, pc.em, pc as QueryPathContext<G>, criteriaQuery.subquery(clz.java) as Subquery<G>)
@@ -407,6 +436,11 @@ infix fun <E, G, T : PathWrap<E, G>> T.or(orClause: T.(T) -> Unit): T {
 @Suppress("UNCHECKED_CAST")
 infix fun <E, G, T : PathWrap<E, G>> T.and(orClause: T.(T) -> Unit): T {
     return this.internalAnd(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
+}
+
+@Suppress("UNCHECKED_CAST")
+infix fun <E, G, T : PathWrap<E, G>> T.not(orClause: T.(T) -> Unit): T {
+    return this.internalNot(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
 }
 
 infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) -> Unit {
@@ -501,12 +535,6 @@ fun <G, T : PathWrap<String, G>> T.isNullOrContains(f: Any): PathWrap<String, G>
     return this
 }
 
-/*fun <G, T : PathWrap<String, G>> T.concat(s: String): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.concat(expression, s))
-}
-fun <G, T : PathWrap<String, G>> T.concat(expr: ExpressionWrap<String, *>): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.concat(expression, expr.getJpaExpression()))
-}*/
 fun <G, T : ExpressionWrap<String, G>> T.concat(s: String): ExpressionWrap<String, G> {
     return ExpressionWrap(pc, pc.cb.concat(expression, s))
 }

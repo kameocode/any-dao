@@ -91,7 +91,7 @@ class QueryPathContext<G>(clz: Class<*>,
             val elementList = (selector as AnyDAO.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
             return rows.map { TupleWrap(it, elementList) as RESULT };
         }
-        if (res.isNotEmpty() && !selector.isSingle() && res.first() is Array<*>) {
+        if (res.isNotEmpty() && /*!selector.isSingle() &&*/ res.first() is Array<*>) {
             val rows = res as List<Array<Any>>
             val row = rows.first()
             return when (row.size) {

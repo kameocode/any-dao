@@ -10,10 +10,14 @@ import javax.persistence.criteria.Selection
 import kotlin.reflect.KFunction1
 import kotlin.reflect.KProperty1
 
+typealias QueryUnit<T> = T.(T) -> Unit;
+
 interface IExpression<F, G> {
     fun getJpaExpression(): Expression<F>
     infix fun eq(expr: IExpression<F, *>): IExpression<F, G>
     infix fun eq(expr: F): IExpression<F, G>
+    infix fun notEq(expr: IExpression<F, *>): IExpression<F, G>
+    infix fun notEq(expr: F): IExpression<F, G>
 }
 
 
@@ -67,7 +71,7 @@ class SelectWrap<E> constructor(val select: Selection<E>, val distinct: Boolean 
     }
 
     override fun isDistinct(): Boolean {
-        return false
+        return distinct
     }
 }
 

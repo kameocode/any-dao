@@ -89,7 +89,7 @@ class MultiselectTest : BaseTest() {
                 UserODB(email = "email2", task = TaskODB(name = "t2")),
                 UserODB(email = "email3", task = TaskODB(name = "t2")))
 
-        var outerName by Delegates.notNull<IExpression<String, *>>()
+        var outerTaskName by Delegates.notNull<IExpression<String, *>>()
         var outerMaxId by Delegates.notNull<IExpression<Long, *>>()
 
 
@@ -98,8 +98,9 @@ class MultiselectTest : BaseTest() {
             val taskid = it[UserODB::task, TaskODB::id]
             val maxTaskId = it[UserODB::id].max()
 
-            outerName = taskName;
+            outerTaskName = taskName
             outerMaxId = maxTaskId
+            taskName.alias("taskNameAlias1")
             it.groupBy(taskName, taskid)
             it.orderBy(UserODB::id)
             it.selectTuple(taskName, maxTaskId, taskid)
@@ -107,12 +108,14 @@ class MultiselectTest : BaseTest() {
 
         res.forEach {
             Assert.assertTrue(it is TupleWrap)
-            Assert.assertEquals(it[0], it[outerName])
+            Assert.assertEquals(it[0], it[outerTaskName])
+            Assert.assertEquals(it[0], it["taskNameAlias1"])
             Assert.assertEquals(it[1], it[outerMaxId])
 
-            Assert.assertTrue(it[outerName] in setOf("t1", "t2", "t3"))
+            Assert.assertTrue(it[outerTaskName] in setOf("t1", "t2", "t3"))
             it.elements.forEach {
-                Assert.assertNull(it.alias)
+                if (it.alias != "taskNameAlias1")
+                    Assert.assertNull(it.alias)
             }
         }
 

@@ -194,7 +194,14 @@ class AnyDAO(val em: EntityManager) {
     inline fun <E : Any, reified RESULT : Any> all(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> (ISugarQuerySelect<RESULT>)): List<RESULT> {
         return all(clz.java, RESULT::class.java, query)
     }
-
+   /* @JvmName("allDefaultReturn")
+    inline fun <reified E : Any> all(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> (Int)): List<E> {
+        val queryWrapp: KRoot<E>.(KRoot<E>) -> (ISugarQuerySelect<E>) = {
+            query.invoke(it, it)
+            it
+        }
+        return all(clz.java, E::class.java, queryWrapp)
+    }*/
 
     inline fun <E : Any, reified RESULT : Any> pages(clz: KClass<E>, page: Page,
                                                      noinline query: KRoot<E>.(KRoot<E>) -> ISugarQuerySelect<RESULT>

@@ -99,7 +99,6 @@ class JoinsTest : BaseTest() {
 
     @Test
     fun `should join to element collection - set`() {
-
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), userRoles = setOf(UserRole.ADMIN))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), userRoles = setOf(UserRole.NORMAL, UserRole.GUEST))
         val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), userRoles = setOf(UserRole.GUEST))
@@ -114,7 +113,7 @@ class JoinsTest : BaseTest() {
             }
 
         }
-        Assert.assertEquals(setOf(u1, u2).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u1, u2).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
 
         val res2 = anyDao.all(UserODB::class) {
             it.joinSet(UserODB::userRoles) {
@@ -124,7 +123,7 @@ class JoinsTest : BaseTest() {
                 }
             }
         }
-        Assert.assertEquals(setOf(u1, u2, u3).map { it.id }.toSet(), res2.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u1, u2, u3).map { it.id }.toList(), res2.map { it.id }.sorted().toList())
     }
 
     @Test
@@ -140,7 +139,7 @@ class JoinsTest : BaseTest() {
                 it eq true
             }
         }
-        Assert.assertEquals(setOf(u1, u2).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u1, u2).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
 
         val res2 = anyDao.all(UserODB::class) {
             it.joinMap(UserODB::userRoles2) {
@@ -148,7 +147,7 @@ class JoinsTest : BaseTest() {
                 it.value() eq true
             }
         }
-        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res2.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u2).map { it.id }.toList(), res2.map { it.id }.sorted().toList())
 
         val res3 = anyDao.all(UserODB::class) {
             it.joinMap(UserODB::userRoles2) {
@@ -172,14 +171,14 @@ class JoinsTest : BaseTest() {
                 it.value() like "true"
             }
         }
-        Assert.assertEquals(setOf(u1, u2).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u1, u2).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
 
         val res1b = anyDao.all(UserODB::class) {
             it.joinMap(UserODB::userRoles3) {
                 it.value() eq "true"
             }
         }
-        Assert.assertEquals(setOf(u1, u2).map { it.id }.toSet(), res1b.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u1, u2).map { it.id }.toList(), res1b.map { it.id }.sorted().toList())
 
         val res2 = anyDao.all(UserODB::class) {
             it.joinMap(UserODB::userRoles3) {
@@ -188,7 +187,7 @@ class JoinsTest : BaseTest() {
                 it like "false"
             }
         }
-        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res2.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u2, u3).map { it.id }.toList(), res2.map { it.id }.sorted().toList())
 
         val res3 = anyDao.all(UserODB::class) {
             it.joinMap(UserODB::userRoles3) {
@@ -214,7 +213,7 @@ class JoinsTest : BaseTest() {
                 it.value() greaterThan 2
             }
         }
-        Assert.assertEquals(setOf(u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u3).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
 
     }
 
@@ -231,7 +230,7 @@ class JoinsTest : BaseTest() {
                 it like "GUEST"
             }
         }
-        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u2, u3).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
 
     }
 
@@ -252,11 +251,96 @@ class JoinsTest : BaseTest() {
 
         val res2 = anyDao.all(UserODB::class) {
             it.joinList(UserODB::userRoles6, JoinType.LEFT) {
-                it isNull {}
+                isNull {}
             }
         }
         Assert.assertEquals(1, res2.size)
-        Assert.assertEquals(setOf(u3).map { it.id }.toSet(), res2.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u3).map { it.id }.toList(), res2.map { it.id }.sorted().toList())
 
     }
+
+    @Test
+    fun `should join on custom expression`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), userRoles6 = listOf("ADMIN"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), userRoles6 = listOf("NORMAL", "GUEST"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), userRoles6 = listOf("ADMIN"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+
+            val email = it[UserODB::email]
+            it.joinList(UserODB::userRoles6) { } on {
+                or {
+                    email like "email1"
+                    email like "email2"
+                }
+            }
+            it[UserODB::task] isNotNull {}
+        }
+        Assert.assertEquals(3, res1.size)
+        Assert.assertEquals(listOf(u1, u2, u2).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
+
+
+        val res2 = anyDao.all(UserODB::class) {
+
+            val email = it[UserODB::email]
+            it.joinList(UserODB::userRoles6)
+            it[UserODB::task] isNotNull {}
+            or {
+                email like "email1"
+                email like "email2"
+            }
+        }
+        Assert.assertEquals(3, res2.size)
+        Assert.assertEquals(listOf(u1, u2, u2).map { it.id }.toList(), res2.map { it.id }.sorted().toList())
+
+    }
+
+    @Test
+    fun `should join on custom expression - distinct`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), userRoles6 = listOf("ADMIN"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), userRoles6 = listOf("NORMAL", "ADMIN"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), userRoles6 = listOf("GUEST"))
+        anyDao.persist(u1, u2, u3)
+
+        val res0 = anyDao.all(UserODB::class) {
+
+            it.joinList(UserODB::userRoles6) on {
+                or {
+                    it like "ADMIN"
+                    it like "NORMAL"
+                }
+            }
+        }
+        Assert.assertEquals(3, res0.size)
+        Assert.assertEquals(listOf(u1, u2, u2).map { it.id }.toList(), res0.map { it.id }.sorted().toList())
+
+        val res1 = anyDao.all(UserODB::class) {
+            joinList(UserODB::userRoles6) on {
+                or {
+                    it like "ADMIN"
+                    it like "NORMAL"
+                }
+            }
+            selectDistinct(it)
+        }
+
+        Assert.assertEquals(2, res1.size)
+        Assert.assertEquals(listOf(u1, u2).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
+    }
+
+    @Test
+    fun `should join on custom boolean expression`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), userRoles6 = listOf("ADMIN"), valid = true)
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), userRoles6 = listOf("NORMAL", "GUEST"), valid = false)
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), userRoles6 = listOf("ADMIN"), valid = false)
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it.joinList(UserODB::userRoles6) on it[UserODB::valid]
+        }
+        Assert.assertEquals(1, res1.size)
+        Assert.assertEquals(listOf(u1).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
+    }
+
 }

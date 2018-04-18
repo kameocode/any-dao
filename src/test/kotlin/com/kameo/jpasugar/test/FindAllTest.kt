@@ -8,6 +8,7 @@ import com.kameo.jpasugar.wraps.and
 import com.kameo.jpasugar.wraps.like
 import com.kameo.jpasugar.wraps.lower
 import com.kameo.jpasugar.wraps.max
+import com.kameo.jpasugar.wraps.not
 import com.kameo.jpasugar.wraps.or
 import org.junit.Assert
 import org.junit.Test
@@ -217,6 +218,19 @@ class FindAllTest : BaseTest() {
         Assert.assertEquals(2, res.size)
     }
 
+    @Test
+    fun `should handle not predicates`() {
+
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class, {
+            not { it[UserODB::email].eq("email1") }
+        })
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+    }
 
 }
 

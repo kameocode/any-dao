@@ -40,7 +40,7 @@ class JpaAccessTest : BaseTest() {
 
 
         val res3 = anyDao.all(UserODB::class) {
-            val task: Join<Any, TaskODB> = it.joinList(UserODB::allTasks).getJpaExpression();
+            val task: Join<*, TaskODB> = it.joinList(UserODB::allTasks).getJpaExpression();
             Assert.assertEquals(task.joinType, JoinType.INNER)
 
             it predicate { cb ->

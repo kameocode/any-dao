@@ -5,11 +5,11 @@ import javax.persistence.criteria.MapJoin
 
 
 class MapJoinWrap<KEY, VALUE, G> constructor(pw: PathContext<G>,
-                                             root: MapJoin<Any, KEY, VALUE>)
+                                             override val root: MapJoin<Any, KEY, VALUE>)
     : JoinWrap<VALUE, G>(pw, root) {
 
-    @Suppress("UNCHECKED_CAST")
-    override fun getJpaExpression() = root as MapJoin<Any, KEY, VALUE>
+
+    override fun getJpaExpression() = root
 
     fun key(): PathWrap<KEY, G> =
             PathWrap(pc, getJpaExpression().key())
@@ -18,6 +18,5 @@ class MapJoinWrap<KEY, VALUE, G> constructor(pw: PathContext<G>,
             PathWrap(pc, getJpaExpression().value())
 
     //TODO entry
-    //TODO on
 }
 

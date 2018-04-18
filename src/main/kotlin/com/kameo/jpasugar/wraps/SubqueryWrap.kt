@@ -1,6 +1,5 @@
 package com.kameo.jpasugar.wraps
 
-import antlr.build.ANTLR.root
 import com.kameo.jpasugar.context.QueryPathContext
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Subquery

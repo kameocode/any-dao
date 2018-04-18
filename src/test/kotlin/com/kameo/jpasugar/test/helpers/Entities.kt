@@ -33,6 +33,7 @@ data class UserODB(@Id
                    @ManyToOne(cascade = [CascadeType.ALL])
                    var task: TaskODB,
 
+                   val valid: Boolean = true,
 
                    @OneToMany(cascade = [CascadeType.ALL])
                    var allTasks: List<TaskODB> = emptyList(),
