@@ -7,6 +7,7 @@ import com.kameo.jpasugar.wraps.concat
 import com.kameo.jpasugar.wraps.contains
 import com.kameo.jpasugar.wraps.isNullOrContains
 import com.kameo.jpasugar.wraps.length
+import com.kameo.jpasugar.wraps.like
 import com.kameo.jpasugar.wraps.locate
 import com.kameo.jpasugar.wraps.lower
 import com.kameo.jpasugar.wraps.substring
@@ -19,6 +20,21 @@ import javax.persistence.criteria.CriteriaBuilder
 
 class StringsTest : BaseTest() {
 
+
+    @Test
+    fun `should return lower string`() {
+        anyDao.persist(
+                UserODB(email = "Email1", task = TaskODB(name = "task1")),
+                UserODB(email = "Email2", task = TaskODB(name = "task2")),
+                UserODB(email = "Email3", task = TaskODB(name = "task3")))
+
+        val uu1: String = anyDao.one(UserODB::class) {
+            it[UserODB::email] like "Email1"
+            it.select(it[UserODB::email].lower())
+        }
+
+        Assert.assertEquals("email1", uu1)
+    }
 
     @Test
     fun `should find by literal - lower`() {
@@ -52,7 +68,7 @@ class StringsTest : BaseTest() {
 
     @Test
     fun `should find by matching substring`() {
-        val u1 = UserODB(email = "1234", task = TaskODB(name = "task1"))
+        val u1 = UserODB(email = "1234", task = TaskODB(name = "task1"), counter = 2)
         val u2 = UserODB(email = "efgh", task = TaskODB(name = "task1"))
         anyDao.persist(u1, u2)
         val res1 = anyDao.all(UserODB::class) {
@@ -69,6 +85,16 @@ class StringsTest : BaseTest() {
             select(it[UserODB::email].substring(2))
         }
         Assert.assertEquals(setOf("234", "fgh"), res3.toSet())
+
+        val res4 = anyDao.all(UserODB::class) {
+            select(it[UserODB::email].substring(it[UserODB::counter]))
+        }
+        Assert.assertEquals(setOf("234", "efgh"), res4.toSet())
+
+        val res5 = anyDao.all(UserODB::class) {
+            select(it[UserODB::email].substring(it[UserODB::counter], it.literal(1)))
+        }
+        Assert.assertEquals(setOf("2", "e"), res5.toSet())
     }
 
 

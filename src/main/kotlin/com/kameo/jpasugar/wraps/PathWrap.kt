@@ -2,7 +2,6 @@ package com.kameo.jpasugar.wraps
 
 
 import com.kameo.jpasugar.AnyDAO
-import com.kameo.jpasugar.IExpression
 import com.kameo.jpasugar.ISelectExpressionProvider
 import com.kameo.jpasugar.KClause
 import com.kameo.jpasugar.KRoot
@@ -31,18 +30,6 @@ open class PathWrap<E, G> constructor(
         open val root: Path<E>
 ) : ExpressionWrap<E, G>(pc, root) {
 
-
-    infix fun groupBy(expr: KProperty1<E, *>) {
-        return pc.groupBy(arrayOf(ExpressionWrap<E, G>(pc, root.get(expr.name))))
-    }
-
-    infix fun groupBy(expr: ExpressionWrap<E, *>) {
-        return pc.groupBy(arrayOf(ExpressionWrap(pc, expr.getJpaExpression())))
-    }
-
-    fun groupBy(vararg exprs: KProperty1<E, *>) {
-        return pc.groupBy(exprs.map { ExpressionWrap<E, G>(pc, root.get(it.name)) }.toTypedArray())
-    }
 
     override fun getDirectSelection(): KSelect<E> {
         return SelectWrap(root)
@@ -106,30 +93,6 @@ open class PathWrap<E, G> constructor(
 
     infix fun eqId(id: Long): PathWrap<E, G> {
         pc.add({ cb.equal(root.get<Path<Long>>("id"), id) })
-        return this
-    }
-
-    fun isNull(): PathWrap<E, G> {
-        pc.add({ cb.isNull(root) })
-        return this
-    }
-
-    fun isNotNull(): PathWrap<E, G> {
-        pc.add({ cb.isNotNull(root) })
-        return this
-    }
-
-    @JvmName("isNullInfix")
-    @Suppress("UNUSED_PARAMETER")
-    infix fun isNull(p: () -> Unit): PathWrap<E, G> {
-        pc.add({ cb.isNull(root) })
-        return this
-    }
-
-    @JvmName("isNotNullInfix")
-    @Suppress("UNUSED_PARAMETER")
-    infix fun isNotNull(p: () -> Unit): PathWrap<E, G> {
-        pc.add({ cb.isNotNull(root) })
         return this
     }
 
@@ -234,11 +197,10 @@ open class PathWrap<E, G> constructor(
     }
 
     protected fun toPredicates(list: MutableList<() -> Predicate?>): MutableList<Predicate> {
-        val predicates = list
+        return list
                 .asSequence()
                 .mapNotNull { it.invoke() }
                 .toMutableList()
-        return predicates
     }
 
 
@@ -247,96 +209,10 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-
-    override infix fun eq(expr: E): PathWrap<E, G> {
-        super.eq(expr)
-        return this
-    }
-
-    override infix fun eq(expr: IExpression<E, *>): PathWrap<E, G> {
-        super.eq(expr)
-        return this
-    }
-
-    override infix fun notEq(expr: E): PathWrap<E, G> {
-        super.notEq(expr)
-        return this
-    }
-
-    override infix fun notEq(expr: IExpression<E, *>): PathWrap<E, G> {
-        super.notEq(expr)
-        return this
-    }
-
-
-    fun <F> eq(sa: SingularAttribute<E, F>, f: F): PathWrap<E, G> {
-        pc.add { cb.equal(root.get(sa), f) }
-        return this
-    }
-
-    fun <F> eq(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
-        pc.add({ cb.equal(root.get<Path<F>>(sa.name), f) })
-        return this
-    }
-
-    fun <F> eqId(sa: KProperty1<E, F>, id: Long): PathWrap<E, G> {
-        pc.add({ cb.equal(root.get<Path<F>>(sa.name).get<Long>("id"), id) })
-        return this
-    }
-
-    fun <F> eq(exp1: ExpressionWrap<F, G>, f: F): PathWrap<E, G> {
-        pc.add({ cb.equal(exp1.getJpaExpression(), f) })
-        return this
-    }
-
-    fun <F> notEq(sa: KProperty1<E, F>, f: F): PathWrap<E, G> {
-        pc.add({ cb.notEqual(root.get<F>(sa.name), f) })
-        return this
-    }
-
-    fun <F> notEq(sa: SingularAttribute<E, F>, f: F): PathWrap<E, G> {
-        pc.add({ cb.notEqual(root.get(sa), f) })
-        return this
-    }
-
-    operator fun <F> rangeTo(sa: KMutableProperty1<E, F>): PathWrap<F, G> {
-        return get(sa)
-    }
-
-    fun eqIdToPred(id: Long): Predicate {
-        return cb.equal(root.get<Path<Long>>("id"), id)
-    }
-
-
-    override infix fun isIn(list: List<E>): PathWrap<E, G> {
-        super.isIn(list)
-        return this
-    }
-
-    override infix fun isIn(expr: ExpressionWrap<E, *>): PathWrap<E, G> {
-        super.isIn(expr)
-        return this
-    }
-
-    override infix fun isIn(expr: SubqueryWrap<E, *>): PathWrap<E, G> {
-        super.isIn(expr)
-        return this
-    }
-
     fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (KSelect<E>)): PathWrap<E, G> {
         newAnd()
         isIn(subqueryFrom(clz, subqueryQuery))
         finishClause()
-        return this
-    }
-
-    override infix fun exists(expr: SubqueryWrap<*, *>): PathWrap<E, G> {
-        super.exists(expr)
-        return this
-    }
-
-    override infix fun notExists(expr: SubqueryWrap<*, *>): PathWrap<E, G> {
-        super.notExists(expr)
         return this
     }
 
@@ -479,92 +355,98 @@ infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) ->
 /**
  * Number extension functions
  */
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> {
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> {
     return ExpressionWrap<NUM, G>(pc, pc.cb.max(root))
 }
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G>  {
+
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G> {
     return ExpressionWrap<NUM, G>(pc, pc.cb.min(root))
 }
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G>  {
+
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G> {
     return ExpressionWrap<NUM, G>(pc, pc.cb.sum(root))
 }
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.sqrt(): ExpressionWrap<Double, G>  {
+
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.sqrt(): ExpressionWrap<Double, G> {
     return ExpressionWrap<Double, G>(pc, pc.cb.sqrt(root))
 }
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.diff(y: NUM): ExpressionWrap<NUM, G> {
+
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.diff(y: NUM): ExpressionWrap<NUM, G> {
     return ExpressionWrap<NUM, G>(pc, pc.cb.diff(root, y))
 }
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.ave(): ExpressionWrap<Double, G> {
+
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.ave(): ExpressionWrap<Double, G> {
     return ExpressionWrap(pc, pc.cb.avg(root))
 }
-fun <G, NUM: Number, T : PathWrap<NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> {
-    return ExpressionWrap<Int, G>(pc, pc.cb.mod(root as Expression<Int>, y))
+
+fun <G, NUM : Number, T : PathWrap<NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> {
+    return ExpressionWrap<Int, G>(pc, pc.cb.mod(expression as Expression<Int>, y))
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThan(f: NUM): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThan(f: NUM): KSelect<G> {
     pc.add({ cb.greaterThan(expression, f) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThan(f: ExpressionWrap<NUM, *>): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThan(f: ExpressionWrap<NUM, *>): KSelect<G> {
     pc.add({ cb.greaterThan(expression, f.getJpaExpression()) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThanOrEqualTo(f: NUM): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThanOrEqualTo(f: NUM): KSelect<G> {
     pc.add({ cb.greaterThanOrEqualTo(expression, f) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThanOrEqualTo(f: ExpressionWrap<NUM, *>): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThanOrEqualTo(f: ExpressionWrap<NUM, *>): KSelect<G> {
     pc.add({ cb.greaterThanOrEqualTo(expression, f.getJpaExpression()) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThan(f: NUM): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThan(f: NUM): KSelect<G> {
     pc.add({ cb.lessThan(expression, f) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThan(f: ExpressionWrap<NUM, *>): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThan(f: ExpressionWrap<NUM, *>): KSelect<G> {
     pc.add({ cb.lessThan(expression, f.getJpaExpression()) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThanOrEqualTo(f: NUM): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThanOrEqualTo(f: NUM): KSelect<G> {
     pc.add({ cb.lessThanOrEqualTo(expression, f) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThanOrEqualTo(f: ExpressionWrap<NUM, *>): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lessThanOrEqualTo(f: ExpressionWrap<NUM, *>): KSelect<G> {
     pc.add({ cb.lessThanOrEqualTo(expression, f.getJpaExpression()) })
     return this
 }
 
-infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.between(pair: Pair<NUM, NUM>): T {
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.between(pair: Pair<NUM, NUM>): KSelect<G> {
     pc.add({ cb.between(expression, pair.first, pair.second) })
     return this
 }
 
 @JvmName("betweenExpression")
-fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.between(pair: Pair<ExpressionWrap<NUM, *>, ExpressionWrap<NUM, *>>): T {
+fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.between(pair: Pair<ExpressionWrap<NUM, *>, ExpressionWrap<NUM, *>>): KSelect<G> {
     pc.add({ cb.between(expression, pair.first.getJpaExpression(), pair.second.getJpaExpression()) })
     return this
 }
 
 
-infix fun <G, T : PathWrap<String, G>> T.like(f: String): T {
-    pc.add({ pc.cb.like(root as (Expression<String>), f) })
+infix fun <G, T : ExpressionWrap<String, G>> T.like(f: String): KSelect<G> {
+    pc.add({ pc.cb.like(expression, f) })
     return this
 }
 
-infix fun <G, T : PathWrap<String, G>> T.like(f: Expression<String>): T {
-    pc.add({ pc.cb.like(root as (Expression<String>), f) })
+infix fun <G, T : ExpressionWrap<String, G>> T.like(f: Expression<String>): KSelect<G> {
+    pc.add({ pc.cb.like(expression, f) })
     return this
 }
 
-infix fun <G, T : PathWrap<String, G>> T.like(f: ExpressionWrap<String, *>): T {
-    pc.add({ pc.cb.like(root as (Expression<String>), f.getJpaExpression()) })
+infix fun <G, T : ExpressionWrap<String, G>> T.like(f: ExpressionWrap<String, *>): KSelect<G> {
+    pc.add({ pc.cb.like(expression, f.getJpaExpression()) })
     return this
 }
 
@@ -576,51 +458,51 @@ fun <G, T : ExpressionWrap<String, G>> T.upper(): ExpressionWrap<String, G> {
     return ExpressionWrap(pc, pc.cb.upper(expression))
 }
 
-fun <G, T : PathWrap<String, G>> T.length(): ExpressionWrap<Int, G> {
-    return ExpressionWrap(pc, pc.cb.length(root as (Expression<String>)))
+fun <G, T : ExpressionWrap<String, G>> T.length(): ExpressionWrap<Int, G> {
+    return ExpressionWrap(pc, pc.cb.length(expression))
 }
 
-fun <G, T : PathWrap<String, G>> T.substring(from: Int): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from))
+fun <G, T : ExpressionWrap<String, G>> T.substring(from: Int): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(expression, from))
 }
 
-fun <G, T : PathWrap<String, G>> T.substring(from: Int, len: Int): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from, len))
+fun <G, T : ExpressionWrap<String, G>> T.substring(from: Int, len: Int): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(expression, from, len))
 }
 
-fun <G, T : PathWrap<String, G>> T.substring(from: ExpressionWrap<Int, *>): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from.getJpaExpression()))
+fun <G, T : ExpressionWrap<String, G>> T.substring(from: ExpressionWrap<Int, *>): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(expression, from.getJpaExpression()))
 }
 
-fun <G, T : PathWrap<String, G>> T.substring(from: ExpressionWrap<Int, *>, len: ExpressionWrap<Int, *>): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.substring(root as (Expression<String>), from.getJpaExpression(), len.getJpaExpression()))
+fun <G, T : ExpressionWrap<String, G>> T.substring(from: ExpressionWrap<Int, *>, len: ExpressionWrap<Int, *>): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.substring(expression, from.getJpaExpression(), len.getJpaExpression()))
 }
 
-fun <G, T : PathWrap<String, G>> T.trim(): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.trim(root as (Expression<String>)))
+fun <G, T : ExpressionWrap<String, G>> T.trim(): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.trim(expression))
 }
 
-fun <G, T : PathWrap<String, G>> T.trim(t: Char): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.trim(t, root as (Expression<String>)))
+fun <G, T : ExpressionWrap<String, G>> T.trim(t: Char): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.trim(t, expression))
 }
 
-fun <G, T : PathWrap<String, G>> T.trim(ts: CriteriaBuilder.Trimspec, t: Char): ExpressionWrap<String, G> {
-    return ExpressionWrap(pc, pc.cb.trim(ts, t, root as (Expression<String>)))
+fun <G, T : ExpressionWrap<String, G>> T.trim(ts: CriteriaBuilder.Trimspec, t: Char): ExpressionWrap<String, G> {
+    return ExpressionWrap(pc, pc.cb.trim(ts, t, expression))
 }
 
-fun <G, T : PathWrap<String, G>> T.locate(pattern: String): ExpressionWrap<Int, G> {
-    return ExpressionWrap(pc, pc.cb.locate(root as (Expression<String>), pattern))
+fun <G, T : ExpressionWrap<String, G>> T.locate(pattern: String): ExpressionWrap<Int, G> {
+    return ExpressionWrap(pc, pc.cb.locate(expression, pattern))
 }
 
-infix fun <G, T : PathWrap<String, G>> T.contains(string: String): T {
+infix fun <G, T : PathWrap<String, G>> T.contains(string: String): KSelect<G> {
     like("%$string%")
     return this
 }
 
-infix fun <G, T : PathWrap<String, G>> T.isNullOrContains(string: String): T {
+infix fun <G, T : PathWrap<String, G>> T.isNullOrContains(string: String): KSelect<G> {
     or {
         isNull()
-        it contains string
+        it like ("%$string%")
     }
     return this
 }

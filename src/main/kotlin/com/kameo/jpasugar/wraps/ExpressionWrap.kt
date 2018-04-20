@@ -21,82 +21,6 @@ open class ExpressionWrap<E, G> constructor(
         IExpression<E, G> {
     val cb = pc.cb
 
-    override fun getJpaSelection(): Selection<E> {
-        return pc.defaultSelection!!.getJpaSelection() as Selection<E>
-    }
-
-    override fun isDistinct(): Boolean {
-        return pc.defaultSelection!!.isDistinct()
-    }
-
-    open infix fun predicate(predicate: ExpressionWrap<E, G>.(cb: CriteriaBuilder) -> Predicate?): ExpressionWrap<E, G> {
-        pc.add({ predicate.invoke(this, cb) })
-        return this
-    }
-
-    fun getJpaCriteria(): CommonAbstractCriteria {
-        return pc.criteria
-    }
-
-    fun alias(alias: String): ExpressionWrap<E, G> {
-        getJpaExpression().alias(alias)
-        return this
-    }
-
-    fun <F> expression(expr: Expression<F>): ExpressionWrap<F, G> {
-        return ExpressionWrap(pc, expr)
-    }
-
-    fun <T> literal(t: T): ExpressionWrap<T, G> {
-        return ExpressionWrap(pc, pc.cb.literal(t))
-    }
-
-    override infix fun eq(expr: E): ExpressionWrap<E, G> {
-        pc.add({ cb.equal(this.expression, expr) })
-        return this
-    }
-
-    override infix fun eq(expr: IExpression<E, *>): ExpressionWrap<E, G> {
-        pc.add({ cb.equal(this.expression, expr.getJpaExpression()) })
-        return this
-    }
-
-    override infix fun notEq(expr: E): ExpressionWrap<E, G> {
-        pc.add({ cb.notEqual(this.expression, expr) })
-        return this
-    }
-
-    override infix fun notEq(expr: IExpression<E, *>): ExpressionWrap<E, G> {
-        pc.add({ cb.notEqual(this.expression, expr.getJpaExpression()) })
-        return this
-    }
-
-    open infix fun isIn(list: List<E>): ExpressionWrap<E, G> {
-        pc.add({ expression.`in`(list) })
-        return this
-    }
-
-    open infix fun isIn(expr: ExpressionWrap<E, *>): ExpressionWrap<E, G> {
-        pc.add({ expression.`in`(expr.expression) })
-        return this
-    }
-
-    open infix fun isIn(expr: SubqueryWrap<E, *>): ExpressionWrap<E, G> {
-        pc.add({ expression.`in`(expr.subquery) })
-        return this
-    }
-
-    open infix fun exists(expr: SubqueryWrap<*, *>): ExpressionWrap<E, G> {
-        pc.add({ cb.exists(expr.subquery) })
-        return this
-    }
-
-    open infix fun notExists(expr: SubqueryWrap<*, *>): ExpressionWrap<E, G> {
-        pc.add({ cb.not(cb.exists(expr.subquery)) })
-        return this
-    }
-
-
     override fun getDirectSelection(): KSelect<E> {
         return SelectWrap(expression)
     }
@@ -105,14 +29,24 @@ open class ExpressionWrap<E, G> constructor(
         return expression
     }
 
-    fun groupBy(vararg expr: IExpression<*, *>): ExpressionWrap<E, G> {
-        pc.groupBy(expr)
-        return this
+    override fun getJpaSelection(): Selection<E> {
+        return pc.defaultSelection!!.getJpaSelection() as Selection<E>
     }
 
-    infix fun groupBy(expr: IExpression<*, *>): ExpressionWrap<E, G> {
-        pc.groupBy(arrayOf(expr))
-        return this
+    fun getJpaCriteria(): CommonAbstractCriteria {
+        return pc.criteria
+    }
+
+    override fun isDistinct(): Boolean {
+        return pc.defaultSelection!!.isDistinct()
+    }
+
+    infix fun <F> expression(expr: Expression<F>): ExpressionWrap<F, G> {
+        return ExpressionWrap(pc, expr)
+    }
+
+    infix fun <T> literal(t: T): ExpressionWrap<T, G> {
+        return ExpressionWrap(pc, pc.cb.literal(t))
     }
 
     fun count(): ExpressionWrap<Long, G> {
@@ -124,5 +58,112 @@ open class ExpressionWrap<E, G> constructor(
         val expression: Expression<F> = cb.function(functionName, clz.java, expr)
         return ExpressionWrap(pc, expression)
     }
+
+
+    open infix fun predicate(predicate: ExpressionWrap<E, G>.(cb: CriteriaBuilder) -> Predicate?): KSelect<G> {
+        pc.add({ predicate.invoke(this, cb) })
+        return this
+    }
+
+    fun isNull(): KSelect<G> {
+        pc.add({ cb.isNull(expression) })
+        return this
+    }
+
+    fun isNotNull(): KSelect<G> {
+        pc.add({ cb.isNotNull(expression) })
+        return this
+    }
+
+
+    @JvmName("isNullInfix")
+    @Suppress("UNUSED_PARAMETER")
+    infix fun isNull(p: () -> Unit): KSelect<G> {
+        pc.add({ cb.isNull(expression) })
+        return this
+    }
+
+    @JvmName("isNotNullInfix")
+    @Suppress("UNUSED_PARAMETER")
+    infix fun isNotNull(p: () -> Unit): KSelect<G> {
+        pc.add({ cb.isNotNull(expression) })
+        return this
+    }
+
+    fun alias(alias: String): KSelect<G> {
+        getJpaExpression().alias(alias)
+        return this
+    }
+
+    infix fun eq(expr: E): KSelect<G> {
+        pc.add({ cb.equal(this.expression, expr) })
+        return this
+    }
+
+    infix fun eq(expr: IExpression<E, *>): KSelect<G> {
+        pc.add({ cb.equal(this.expression, expr.getJpaExpression()) })
+        return this
+    }
+
+    infix fun notEq(expr: E): KSelect<G> {
+        pc.add({ cb.notEqual(this.expression, expr) })
+        return this
+    }
+
+    infix fun notEq(expr: IExpression<E, *>): KSelect<G> {
+        pc.add({ cb.notEqual(this.expression, expr.getJpaExpression()) })
+        return this
+    }
+
+    infix fun isIn(collection: Collection<E>): KSelect<G> {
+        pc.add({ expression.`in`(collection) })
+        return this
+    }
+
+    infix fun isIn(expr: ExpressionWrap<E, *>): KSelect<G> {
+        pc.add({ expression.`in`(expr.expression) })
+        return this
+    }
+
+    infix fun isIn(expr: SubqueryWrap<E, *>): KSelect<G> {
+        pc.add({ expression.`in`(expr.subquery) })
+        return this
+    }
+
+    infix fun isNotIn(collection: Collection<E>): KSelect<G> {
+        pc.add({ cb.not(expression.`in`(collection)) })
+        return this
+    }
+
+    infix fun isNotIn(expr: ExpressionWrap<E, *>): KSelect<G> {
+        pc.add({ cb.not(expression.`in`(expr.expression)) })
+        return this
+    }
+
+    infix fun isNotIn(expr: SubqueryWrap<E, *>): KSelect<G> {
+        pc.add({ cb.not(expression.`in`(expr.subquery)) })
+        return this
+    }
+
+    infix fun exists(expr: SubqueryWrap<*, *>): KSelect<G> {
+        pc.add({ cb.exists(expr.subquery) })
+        return this
+    }
+
+    infix fun notExists(expr: SubqueryWrap<*, *>): KSelect<G> {
+        pc.add({ cb.not(cb.exists(expr.subquery)) })
+        return this
+    }
+
+    fun groupBy(vararg expr: IExpression<*, *>): KSelect<G> {
+        pc.groupBy(expr)
+        return this
+    }
+
+    infix fun groupBy(expr: IExpression<*, *>): KSelect<G> {
+        pc.groupBy(arrayOf(expr))
+        return this
+    }
+
 
 }

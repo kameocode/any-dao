@@ -20,10 +20,6 @@ typealias KFromClause<E> = FromWrap<E, Any>.(FromWrap<E, Any>) -> Unit
 
 interface IExpression<F, G> {
     fun getJpaExpression(): Expression<F>
-    infix fun eq(expr: IExpression<F, *>): IExpression<F, G>
-    infix fun eq(expr: F): IExpression<F, G>
-    infix fun notEq(expr: IExpression<F, *>): IExpression<F, G>
-    infix fun notEq(expr: F): IExpression<F, G>
 }
 
 
@@ -37,9 +33,9 @@ private class FakeProperty<T, R>(val function: KFunction1<T, R>) : KProperty1<T,
         if (sa.name.startsWith("get")) {
             return sa.name[3].toLowerCase() + sa.name.substring(4)
         } else if (sa.name.startsWith("is")) {
-            return sa.name[3].toLowerCase() + sa.name.substring(4)
+            return sa.name[2].toLowerCase() + sa.name.substring(3)
         }
-        return sa.name
+        throw IllegalArgumentException("Function ${sa.name} is not a getter");
     }
 }
 
@@ -78,7 +74,8 @@ interface ISelectExpressionProvider<E> {
 }
 
 @Suppress("UNCHECKED_CAST")
-class TupleWrap(val arr: Array<Any>, val elementList: MutableList<out TupleElement<*>>) : Tuple {
+class TupleWrap(private val arr: Array<Any>,
+                private val elementList: MutableList<out TupleElement<*>>) : Tuple {
 
     override fun toArray(): Array<Any> {
         return arr;
@@ -131,13 +128,13 @@ abstract class PagesResult<E>(val pageSize: Int) {
     fun forEachFlatUntil(consumer: (E) -> Boolean) {
         beforeForeach()
         this.forEachUntil {
-            var shouldContinue = true;
+            var shouldContinue = true
             for (e in it) {
-                shouldContinue = consumer.invoke(e);
+                shouldContinue = consumer.invoke(e)
                 if (!shouldContinue)
-                    break;
+                    break
             }
-            shouldContinue;
+            shouldContinue
         }
     }
 
@@ -149,12 +146,12 @@ abstract class PagesResult<E>(val pageSize: Int) {
     fun forEachUntil(consumer: (List<E>) -> Boolean) {
         beforeForeach()
         do {
-            val si = this.invoke();
+            val si = this.invoke()
             if (si.isEmpty())
                 break;
-            val shouldContinue = consumer.invoke(si);
+            val shouldContinue = consumer.invoke(si)
             if (!shouldContinue || si.size < pageSize)
-                break;
+                break
         } while (true)
     }
 

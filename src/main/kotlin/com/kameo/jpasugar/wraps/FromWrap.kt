@@ -13,13 +13,15 @@ import kotlin.reflect.KProperty1
 open class FromWrap<E, G> constructor(val pw: PathContext<G>,
                                       override val root: From<*, E>)
     : PathWrap<E, G>(pw, root) {
-
+/*
 
     override fun getJpaExpression(): From<*, E> {
         return root
-    }
+    }*/
 
-    fun <F> join(sa: KProperty1<E, F?>, joinType: JoinType = JoinType.INNER, andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
+    fun <F> join(sa: KProperty1<E, F?>,
+                 joinType: JoinType = JoinType.INNER,
+                 andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
         val join = root.join<E, F>(sa.name, joinType)
         val jw = JoinWrap(pw, join)
         if (andClause != null) {
@@ -30,10 +32,14 @@ open class FromWrap<E, G> constructor(val pw: PathContext<G>,
         return jw
     }
 
-    fun <F> join(sa: KFunction1<E, F?>, joinType: JoinType = JoinType.INNER, andClause: QueryUnit<FromWrap<F, G>>? = null) =
+    fun <F> join(sa: KFunction1<E, F?>,
+                 joinType: JoinType = JoinType.INNER,
+                 andClause: QueryUnit<FromWrap<F, G>>? = null) =
             this.join(+sa, joinType, andClause)
 
-    fun <F> joinList(sa: KProperty1<E, List<F>?>, joinType: JoinType = JoinType.INNER, andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
+    fun <F> joinList(sa: KProperty1<E, List<F>?>,
+                     joinType: JoinType = JoinType.INNER,
+                     andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
         val join = root.join<E, F>(sa.name, joinType)
         val jw = JoinWrap(pw, join)
         if (andClause != null) {
@@ -44,11 +50,15 @@ open class FromWrap<E, G> constructor(val pw: PathContext<G>,
         return jw
     }
 
-    fun <F> joinList(sa: KFunction1<E, List<F>?>, joinType: JoinType = JoinType.INNER, andClause: QueryUnit<FromWrap<F, G>>? = null) =
+    fun <F> joinList(sa: KFunction1<E, List<F>?>,
+                     joinType: JoinType = JoinType.INNER,
+                     andClause: QueryUnit<FromWrap<F, G>>? = null) =
             joinList(+sa, joinType, andClause)
 
 
-    fun <F> joinSet(sa: KProperty1<E, Set<F>?>, joinType: JoinType = JoinType.INNER, andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
+    fun <F> joinSet(sa: KProperty1<E, Set<F>?>,
+                    joinType: JoinType = JoinType.INNER,
+                    andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
         val join = root.join<E, F>(sa.name, joinType)
         val jw = JoinWrap(pw, join)
         if (andClause != null) {

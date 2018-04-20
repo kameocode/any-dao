@@ -22,7 +22,6 @@ class FindAllTest : BaseTest() {
 
     @Test
     fun `should execute simple all queries`() {
-
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
         val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
@@ -178,21 +177,6 @@ class FindAllTest : BaseTest() {
         Assert.assertNull(uu2)
     }
 
-    @Test
-    fun `should return lower string`() {
-
-        anyDao.persist(
-                UserODB(email = "Email1", task = TaskODB(name = "task1")),
-                UserODB(email = "Email2", task = TaskODB(name = "task2")),
-                UserODB(email = "Email3", task = TaskODB(name = "task3")))
-
-        val uu1: String = anyDao.one(UserODB::class) {
-            it[UserODB::email] like "Email1"
-            it.select(it[UserODB::email].lower())
-        }
-
-        Assert.assertEquals("email1", uu1)
-    }
 
     @Test
     fun `should return max id`() {
@@ -269,6 +253,95 @@ class FindAllTest : BaseTest() {
             it[UserODB::taskNullable, TaskODB::addressNullable, AddressODB::cityNullable] like "Cracow"
         })
         Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res5.map { it.id }.toSet())
+    }
+
+
+    @Test
+    fun `should work with in and notIn predicates`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "email1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::email] isIn setOf("email2", "email3")
+        }
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::email] isIn subqueryFrom(TaskODB::class) {
+                it select it[TaskODB::name]
+            }
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res2.map { it.id }.toSet())
+
+        val res3 = anyDao.all(UserODB::class) {
+            it[UserODB::email] isIn it[UserODB::task, TaskODB::name]
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res3.map { it.id }.toSet())
+
+
+        val res4 = anyDao.all(UserODB::class) {
+            it[UserODB::email] isNotIn setOf("email2", "email3")
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res4.map { it.id }.toSet())
+
+        val res5 = anyDao.all(UserODB::class) {
+            it[UserODB::email] isNotIn subqueryFrom(TaskODB::class) {
+                it select it[TaskODB::name]
+            }
+        }
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res5.map { it.id }.toSet())
+
+        val res6 = anyDao.all(UserODB::class) {
+            it[UserODB::email] isNotIn it[UserODB::task, TaskODB::name]
+        }
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res6.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `should work with eq and notEq predicates`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "email1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::email] eq "email1"
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res1.map { it.id }.toSet())
+
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::email] eq it[UserODB::task, TaskODB::name]
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res2.map { it.id }.toSet())
+
+        val res3 = anyDao.all(UserODB::class) {
+            it[UserODB::email] notEq "email1"
+        }
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res3.map { it.id }.toSet())
+
+        val res4 = anyDao.all(UserODB::class) {
+            it[UserODB::email] notEq it[UserODB::task, TaskODB::name]
+        }
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res4.map { it.id }.toSet())
+
+    }
+    @Test
+    fun `should work with isNull and isNotNull predicates`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "email1"), taskNullable = TaskODB(name = "email1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::taskNullable].isNotNull()
+        }
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::taskNullable].isNull()
+        }
+        Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res2.map { it.id }.toSet())
     }
 
 }
