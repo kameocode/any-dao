@@ -21,6 +21,13 @@ class JpaAccessTest : BaseTest() {
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), allTasks = listOf(TaskODB(name = "allTask2")));
         anyDao.persist(u1, u2)
 
+        val res0 = anyDao.all(UserODB::class) {
+            val root = it.getJpaExpression();
+            it predicate { cb -> cb.equal(root.get<String>("email"), "email1") }
+        }
+
+        Assert.assertEquals(1, res0.size)
+
         val res = anyDao.all(UserODB::class) {
             val expr = it[UserODB::task].getJpaExpression();
             Assert.assertNotNull(expr)
@@ -85,6 +92,7 @@ class JpaAccessTest : BaseTest() {
             }
             it predicate { cb ->
                 val jpaSubquery = getJpaCriteria().subquery(TaskODB::class.java);
+
                 val subqueryRoot = jpaSubquery.from(TaskODB::class.java)
                 jpaSubquery.select(subqueryRoot)
                 jpaSubquery.where(cb.equal(subqueryRoot.get<String>("name"), "task1"))

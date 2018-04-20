@@ -70,6 +70,23 @@ class JoinsTest : BaseTest() {
     }
 
     @Test
+    fun `should execute join with clause`() {
+
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), address = AddressODB(city = "Cracow"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), address = AddressODB(city = "Warsaw"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), address = AddressODB(city = "Cracow"))
+        anyDao.persist(u1, u2, u3)
+
+
+        val res1 = anyDao.all(UserODB::class) {
+            it.join(UserODB::address) {
+                it[AddressODB::city] eq "Cracow"
+            }
+        }
+        Assert.assertEquals(setOf(u1,u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+    }
+
+    @Test
     fun `should execute query with left join to @OneToMany`() {
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), allTasks = listOf(TaskODB(name = "task1a"), TaskODB(name = "task1b")))
         val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), address = AddressODB(city = "Warsaw"),

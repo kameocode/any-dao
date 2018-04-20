@@ -6,6 +6,7 @@ import com.kameo.jpasugar.context.UpdatePathContext
 import com.kameo.jpasugar.wraps.ExpressionWrap
 import com.kameo.jpasugar.wraps.PathWrap
 import com.kameo.jpasugar.wraps.RootWrapUpdate
+import com.kameo.jpasugar.wraps.greaterThan
 import javax.persistence.EntityManager
 import javax.persistence.NoResultException
 import javax.persistence.Tuple
@@ -13,10 +14,11 @@ import javax.persistence.criteria.CriteriaBuilder
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Selection
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 
 @Suppress("UNUSED_PARAMETER") // parameter resltClass is unused but needed for type safety
-class AnyDAO(val em: EntityManager) {
+class AnyDAO(val em: EntityManager): EntityManager by em {
 
     class PathPairSelect<E, F>(val first: KSelect<E>, val second: KSelect<F>, val distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Pair<E, F>> {
         override fun isDistinct(): Boolean = distinct
@@ -70,24 +72,11 @@ class AnyDAO(val em: EntityManager) {
             val sel = expr.map { it.getJpaExpression() }.toTypedArray()
             return cb.construct(clz.java, *sel)
         }
-
     }
 
-    fun clear() {
-        em.clear()
-    }
-
-    fun <T> merge(entity: T): T {
-        return em.merge(entity)
-    }
-
-    fun <T> remove(entity: T): T {
+    fun <T> delete(entity: T): T {
         em.remove(entity)
         return entity
-    }
-
-    fun persist(entity: Any) {
-        em.persist(entity)
     }
 
     fun persist(vararg entities: Any) {
@@ -189,6 +178,10 @@ class AnyDAO(val em: EntityManager) {
         return object : PagesResult<RESULT>(page.pageSize) {
             var currentpage = page;
 
+            override fun beforeForeach() {
+                currentpage = page
+            }
+
             override fun invoke(): List<RESULT> {
                 val results = this@AnyDAO.page(clz, currentpage, query);
                 currentpage = currentpage.next();
@@ -210,13 +203,52 @@ class AnyDAO(val em: EntityManager) {
         return all(clz.java, RESULT::class.java, wrapperQuery)
     }
 
-    fun <E : Any> remove(clz: Class<E>, query: (KRoot<E>) -> Unit): Int {
+   inline fun <E : Any, NUM, reified RESULT : Any> pageSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, num: NUM?, page: Page,
+                                                    noinline query: KRoot<E>.(KRoot<E>) -> KSelect<RESULT>): List<RESULT> where NUM: Number, NUM: Comparable<NUM> {
+
+        val wrapperQuery: KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>) = {
+            if (num!=null)
+                this[prop].greaterThan(num)
+            this.orderBy(prop)
+            val result = query.invoke(this, this);
+            this.limit(page.pageSize);
+            this.skip(0)
+
+            result;
+        }
+
+        return all(clz.java, RESULT::class.java, wrapperQuery)
+}
+    inline fun <reified E : Any, NUM> pagesSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, page: Page = Page(),
+                                                  noinline query: KRoot<E>.(KRoot<E>) -> KSelect<E>
+    ): PagesResult<E> where NUM: Number, NUM: Comparable<NUM> {
+
+        return object : PagesResult<E>(page.pageSize) {
+            var currentpage = page;
+            var num: NUM? = null;
+
+            override fun beforeForeach() {
+                currentpage = page
+                num = null
+            }
+
+            override fun invoke(): List<E> {
+                val results = this@AnyDAO.pageSorted(clz, prop, num, currentpage, query);
+                currentpage = currentpage.next();
+                if (!results.isEmpty())
+                    num = prop.get(results.last())
+                return results;
+            }
+        };
+    }
+
+    fun <E : Any> delete(clz: Class<E>, query: (KRoot<E>) -> Unit): Int {
         val pc = DeletePathContext<E>(clz, em)
         return pc.invokeDelete(query).executeUpdate()
     }
 
-    fun <E : Any> remove(clz: KClass<E>, query: (KRoot<E>) -> Unit): Int {
-        return remove(clz.java, query)
+    fun <E : Any> delete(clz: KClass<E>, query: (KRoot<E>) -> Unit): Int {
+        return delete(clz.java, query)
     }
 
     /**

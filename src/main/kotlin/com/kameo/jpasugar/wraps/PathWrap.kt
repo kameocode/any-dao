@@ -418,14 +418,33 @@ open class PathWrap<E, G> constructor(
     infix operator fun <F> get(sa: KFunction1<E, F?>): PathWrap<F, G> = get(+sa)
 
 
-    @JvmName("getNullable2")
-    operator fun <F, F2> get(sa: KProperty1<E, F?>, sa2: KProperty1<F, F2>): PathWrap<F2, G> {
+    operator fun <F, F2> get(sa: KProperty1<E, F?>, sa2: KProperty1<F, F2?>): PathWrap<F2, G> {
         val p: Path<F> = root.get(sa.name)
         return PathWrap(pc, p.get(sa2.name))
     }
 
-    @JvmName("getNullable2")
-    operator fun <F, F2> get(sa: KFunction1<E, F?>, sa2: KFunction1<F, F2>): PathWrap<F2, G> = get(+sa, +sa2)
+    operator fun <F, F2> get(sa: KFunction1<E, F?>, sa2: KFunction1<F, F2?>): PathWrap<F2, G> =
+            get(+sa, +sa2)
+
+    operator fun <F, F2, F3> get(sa: KProperty1<E, F?>, sa2: KProperty1<F, F2?>, sa3: KProperty1<F2, F3?>): PathWrap<F3, G> {
+        val p: Path<F2> = root.get(sa.name)
+        val p2: Path<F3> = p.get(sa2.name)
+        return PathWrap(pc, p2.get(sa3.name))
+    }
+
+    operator fun <F, F2, F3> get(sa: KFunction1<E, F?>, sa2: KFunction1<F, F2?>, sa3: KFunction1<F2, F3?>): PathWrap<F3, G> =
+            get(+sa, +sa2, +sa3)
+
+    operator fun <F, F2, F3, F4> get(sa: KProperty1<E, F?>, sa2: KProperty1<F, F2?>, sa3: KProperty1<F2, F3?>, sa4: KProperty1<F3, F4?>): PathWrap<F4, G> {
+        val p: Path<F> = root.get(sa.name)
+        val p2: Path<F2> = p.get(sa2.name)
+        val p3: Path<F3> = p2.get(sa3.name)
+        return PathWrap(pc, p3.get(sa4.name))
+    }
+
+    operator fun <F, F2, F3, F4> get(sa: KFunction1<E, F?>, sa2: KFunction1<F, F2?>, sa3: KFunction1<F2, F3?>, sa4: KFunction1<F3, F4?>): PathWrap<F4, G> =
+            get(+sa, +sa2, +sa3, +sa4)
+
 
     infix fun applyClause(query: KClause<E>): PathWrap<E, G> {
         query.invoke(this as PathWrap<E, Any>, this as PathWrap<E, Any>)
@@ -457,24 +476,25 @@ infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) ->
 /**
  * Number extension functions
  */
-fun <G, NUM, T : PathWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> where NUM : Number, NUM : Comparable<NUM> {
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> {
     return ExpressionWrap<NUM, G>(pc, pc.cb.max(root))
 }
-
-fun <G, NUM, T : PathWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G> where NUM : Number, NUM : Comparable<NUM> {
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G>  {
     return ExpressionWrap<NUM, G>(pc, pc.cb.min(root))
 }
-
-fun <G, NUM, T : PathWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G> where NUM : Number, NUM : Comparable<NUM> {
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G>  {
     return ExpressionWrap<NUM, G>(pc, pc.cb.sum(root))
 }
-
-fun <G, NUM, T : PathWrap<NUM, G>> T.ave(): ExpressionWrap<Double, G> where NUM : Number, NUM : Comparable<NUM> {
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.sqrt(): ExpressionWrap<Double, G>  {
+    return ExpressionWrap<Double, G>(pc, pc.cb.sqrt(root))
+}
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.diff(y: NUM): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.diff(root, y))
+}
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.ave(): ExpressionWrap<Double, G> {
     return ExpressionWrap(pc, pc.cb.avg(root))
 }
-
-
-fun <G, NUM, T : PathWrap<NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> where NUM : Number, NUM : Comparable<NUM> {
+fun <G, NUM: Number, T : PathWrap<NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> {
     return ExpressionWrap<Int, G>(pc, pc.cb.mod(root as Expression<Int>, y))
 }
 
@@ -589,15 +609,15 @@ fun <G, T : PathWrap<String, G>> T.locate(pattern: String): ExpressionWrap<Int, 
     return ExpressionWrap(pc, pc.cb.locate(root as (Expression<String>), pattern))
 }
 
-infix fun <G, T : PathWrap<String, G>> T.contains(f: Any): T {
-    like("%" + f.toString() + "%")
+infix fun <G, T : PathWrap<String, G>> T.contains(string: String): T {
+    like("%$string%")
     return this
 }
 
-infix fun <G, T : PathWrap<String, G>> T.isNullOrContains(f: Any): T {
+infix fun <G, T : PathWrap<String, G>> T.isNullOrContains(string: String): T {
     or {
         isNull()
-        like("%" + f.toString() + "%")
+        it contains string
     }
     return this
 }

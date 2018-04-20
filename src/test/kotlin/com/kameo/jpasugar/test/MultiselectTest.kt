@@ -61,10 +61,10 @@ class MultiselectTest : BaseTest() {
 
     @Test
     fun `should return multiselect (array)`() {
-        anyDao.persist(
-                UserODB(email = "email1", task = TaskODB(name = "t1")),
-                UserODB(email = "email2", task = TaskODB(name = "t2")),
-                UserODB(email = "email3", task = TaskODB(name = "t3")))
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "t1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "t2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "t3"))
+        anyDao.persist(u1, u2, u3)
 
         val res: List<Array<Any>> = anyDao.all(UserODB::class) {
             val taskName = it[UserODB::task, TaskODB::name]
@@ -76,18 +76,19 @@ class MultiselectTest : BaseTest() {
         Assert.assertEquals(3, res.size)
 
         Assert.assertEquals("t1", res[0][0])
-        Assert.assertEquals(1L, res[0][1])
+        Assert.assertEquals(u1.id, res[0][1])
 
         Assert.assertEquals("t2", res[1][0])
-        Assert.assertEquals(3L, res[1][1])
+        Assert.assertEquals(u2.id, res[1][1])
     }
 
     @Test
     fun `should return multiselect (tuple)`() {
-        anyDao.persist(
-                UserODB(email = "email1", task = TaskODB(name = "t1")),
-                UserODB(email = "email2", task = TaskODB(name = "t2")),
-                UserODB(email = "email3", task = TaskODB(name = "t2")))
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "t1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "t2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "t2"))
+        anyDao.persist(u1, u2, u3)
+
 
         var outerTaskName by Delegates.notNull<IExpression<String, *>>()
         var outerMaxId by Delegates.notNull<IExpression<Long, *>>()
@@ -122,10 +123,10 @@ class MultiselectTest : BaseTest() {
         Assert.assertEquals(3, res.size)
 
         Assert.assertEquals("t1", res[0][0])
-        Assert.assertEquals(1L, res[0][1])
+        Assert.assertEquals(u1.id, res[0][1])
 
         Assert.assertEquals("t2", res[1][0])
-        Assert.assertEquals(3L, res[1][1])
+        Assert.assertEquals(u2.id, res[1][1])
     }
 
     class UserTaskDTO(val userEmail: String, val userId: Long, val taskName: String)

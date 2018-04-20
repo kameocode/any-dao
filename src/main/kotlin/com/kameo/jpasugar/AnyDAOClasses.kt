@@ -120,11 +120,15 @@ data class Page(val pageSize: Int = 10, val offset: Int = 0) {
 abstract class PagesResult<E>(val pageSize: Int) {
     abstract fun invoke(): List<E>
 
+    open protected fun beforeForeach() {}
+
     fun forEachFlat(consumer: (E) -> Unit) {
+        beforeForeach()
         this.forEach { it.forEach(consumer) }
     }
 
     fun forEachFlatUntil(consumer: (E) -> Boolean) {
+        beforeForeach()
         this.forEachUntil {
             var shouldContinue = true;
             for (e in it) {
@@ -137,10 +141,12 @@ abstract class PagesResult<E>(val pageSize: Int) {
     }
 
     fun forEach(consumer: (List<E>) -> Unit) {
+        beforeForeach()
         this.forEachUntil { consumer.invoke(it); true }
     }
 
     fun forEachUntil(consumer: (List<E>) -> Boolean) {
+        beforeForeach()
         do {
             val si = this.invoke();
             if (si.isEmpty())

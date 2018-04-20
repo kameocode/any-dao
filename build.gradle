@@ -33,7 +33,7 @@ dependencies {
 
     compile "org.springframework.boot:spring-boot-starter-data-jpa:1.5.4.RELEASE"
     compile "org.springframework.boot:spring-boot-starter-test:1.5.4.RELEASE"
-    compile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.2.16.Final'
+    testCompile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.2.16.Final'
 
     compile group: 'org.hibernate.javax.persistence', name: 'hibernate-jpa-2.1-api', version: '1.0.2.Final'
     // kotlin libraries

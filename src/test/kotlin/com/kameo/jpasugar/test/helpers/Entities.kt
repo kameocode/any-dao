@@ -6,6 +6,7 @@ import java.util.*
 import javax.persistence.CascadeType
 import javax.persistence.ElementCollection
 import javax.persistence.Entity
+import javax.persistence.Enumerated
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.ManyToOne
@@ -18,6 +19,7 @@ enum class UserRole {
     NORMAL,
     GUEST
 }
+
 @Entity
 data class UserODB(@Id
                    @GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
@@ -33,10 +35,16 @@ data class UserODB(@Id
                    @ManyToOne(cascade = [CascadeType.ALL])
                    var task: TaskODB,
 
+                   @ManyToOne(cascade = [CascadeType.ALL])
+                   var taskNullable: TaskODB? = null,
+
                    val valid: Boolean = true,
 
                    @OneToMany(cascade = [CascadeType.ALL])
                    var allTasks: List<TaskODB> = emptyList(),
+
+                   @Enumerated
+                   val userRole: UserRole = UserRole.NORMAL,
 
                    @ElementCollection
                    val userRoles: Set<UserRole> = emptySet(),
@@ -64,7 +72,8 @@ data class UserODB(@Id
                    val localDate: LocalDate = LocalDate.now(),
 
                    @Temporal(TemporalType.TIMESTAMP)
-                   val timestamp: Date = Date()
+                   val timestamp: Date = Date(),
+                   val counter: Int = 0
 
 ) {
 
@@ -76,12 +85,16 @@ data class UserODB(@Id
 @Entity
 data class AddressODB(@Id
                       @GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
-                      val id: Long = 0, val city: String);
+                      val id: Long = 0, val city: String, val cityNullable: String? = null);
 
 @Entity
 data class TaskODB(@Id
                    @GeneratedValue(strategy = javax.persistence.GenerationType.AUTO)
                    val id: Long = 0, val name: String,
                    @ManyToOne(cascade = [CascadeType.ALL])
-                   var address: AddressODB? = null);
+                   var address: AddressODB = AddressODB(city = "City1"),
+
+                   @ManyToOne(cascade = [CascadeType.ALL])
+                   var addressNullable: AddressODB? = null,
+                   val createDateTime: LocalDateTime = LocalDateTime.now());
 

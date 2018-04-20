@@ -11,7 +11,7 @@ import org.junit.Test
 class DeleteTest : BaseTest() {
 
     @Test
-    fun `should remove all entities`() {
+    fun `should delete all entities`() {
         anyDao.persist(
                 UserODB(email = "email1", task = TaskODB(name = "task1")),
                 UserODB(email = "email2", task = TaskODB(name = "task2")),
@@ -20,14 +20,14 @@ class DeleteTest : BaseTest() {
         val count1 = anyDao.count(UserODB::class)
         Assert.assertEquals(3, count1)
 
-        anyDao.remove(UserODB::class) {}
+        anyDao.delete(UserODB::class) {}
 
         val count2 = anyDao.count(UserODB::class)
         Assert.assertEquals(0, count2)
     }
 
     @Test
-    fun `should remove entity`() {
+    fun `should delete entity`() {
 
         val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
         anyDao.persist(
@@ -38,14 +38,14 @@ class DeleteTest : BaseTest() {
         Assert.assertEquals(3, anyDao.count(UserODB::class))
 
 
-        anyDao.remove(u1)
+        anyDao.delete(u1)
         Assert.assertEquals(2, anyDao.count(UserODB::class))
 
-        val removedCount = anyDao.remove(UserODB::class) { it[UserODB::email] like "email1" }
+        val removedCount = anyDao.delete(UserODB::class) { it[UserODB::email] like "email1" }
         Assert.assertEquals(0, removedCount)
 
 
-        val removedCount2 = anyDao.remove(UserODB::class) { it[UserODB::email] like "email2" }
+        val removedCount2 = anyDao.delete(UserODB::class) { it[UserODB::email] like "email2" }
         Assert.assertEquals(1, removedCount2)
         Assert.assertEquals(1, anyDao.count(UserODB::class))
 

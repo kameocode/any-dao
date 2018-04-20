@@ -62,7 +62,7 @@ open class ExpressionWrap<E, G> constructor(
     }
 
     override infix fun notEq(expr: E): ExpressionWrap<E, G> {
-        pc.add({ cb.not(cb.equal(this.expression, expr)) })
+        pc.add({ cb.notEqual(this.expression, expr) })
         return this
     }
 

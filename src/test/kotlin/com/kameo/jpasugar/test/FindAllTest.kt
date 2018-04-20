@@ -235,6 +235,41 @@ class FindAllTest : BaseTest() {
         Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
     }
 
+    @Test
+    fun `should allow get three paths at once`() {
+
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1", address = AddressODB(city = "Cracow")),
+                taskNullable =  TaskODB(name = "task1", address = AddressODB(city = "Cracow")))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2", addressNullable = AddressODB(city = "Cracow")),
+                taskNullable = TaskODB(name = "task2", addressNullable = AddressODB(city = "Cracow", cityNullable = "Cracow")))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class, {
+           it[UserODB::task, TaskODB::address, AddressODB::city] like "Cracow"
+        })
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res1.map { it.id }.toSet())
+
+        val res2 = anyDao.all(UserODB::class, {
+            it[UserODB::task, TaskODB::addressNullable, AddressODB::city] like "Cracow"
+        })
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res2.map { it.id }.toSet())
+
+        val res3 = anyDao.all(UserODB::class, {
+            it[UserODB::taskNullable, TaskODB::address, AddressODB::city] like "Cracow"
+        })
+        Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res3.map { it.id }.toSet())
+
+        val res4 = anyDao.all(UserODB::class, {
+            it[UserODB::taskNullable, TaskODB::addressNullable, AddressODB::city] like "Cracow"
+        })
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res4.map { it.id }.toSet())
+
+        val res5 = anyDao.all(UserODB::class, {
+            it[UserODB::taskNullable, TaskODB::addressNullable, AddressODB::cityNullable] like "Cracow"
+        })
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res5.map { it.id }.toSet())
+    }
 
 }
 

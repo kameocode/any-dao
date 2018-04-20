@@ -4,6 +4,7 @@ import com.kameo.jpasugar.test.helpers.BaseTest
 import com.kameo.jpasugar.test.helpers.TaskODB
 import com.kameo.jpasugar.test.helpers.UserODB
 import com.kameo.jpasugar.wraps.greaterThan
+import com.kameo.jpasugar.wraps.lessThan
 import com.kameo.jpasugar.wraps.max
 import org.junit.Assert
 import org.junit.Test
@@ -63,7 +64,7 @@ class GroupByTest : BaseTest() {
             it.having {
                 it[UserODB::task, TaskODB::name].count() greaterThan 1L
             }
-            it.select(it[UserODB::task, TaskODB::name])
+            select(it[UserODB::task, TaskODB::name])
         }
         Assert.assertEquals(setOf("t1").toSortedSet(), res2.toSortedSet())
     }
