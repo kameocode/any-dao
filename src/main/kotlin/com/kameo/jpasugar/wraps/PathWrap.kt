@@ -120,12 +120,14 @@ open class PathWrap<E, G> constructor(
     }
 
     @JvmName("isNullInfix")
+    @Suppress("UNUSED_PARAMETER")
     infix fun isNull(p: () -> Unit): PathWrap<E, G> {
         pc.add({ cb.isNull(root) })
         return this
     }
 
     @JvmName("isNotNullInfix")
+    @Suppress("UNUSED_PARAMETER")
     infix fun isNotNull(p: () -> Unit): PathWrap<E, G> {
         pc.add({ cb.isNotNull(root) })
         return this
@@ -401,9 +403,10 @@ open class PathWrap<E, G> constructor(
     fun orderBy(sa: KFunction1<E, *>): PathWrap<E, G> = orderBy(+sa)
     fun orderByAsc(sa: KFunction1<E, *>): PathWrap<E, G> = orderByAsc(+sa)
     fun orderByDesc(sa: KFunction1<E, *>): PathWrap<E, G> = orderByDesc(+sa)
+
     fun <F> get(sa: KFunction1<E, List<F>>): UseGetListOnJoinInstead = get(+sa)
 
-
+    @Suppress("UNUSED_PARAMETER")
     fun <F> get(sa: KProperty1<E, List<F>>): UseGetListOnJoinInstead {
         return UseGetListOnJoinInstead()
     }

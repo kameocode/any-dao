@@ -77,6 +77,7 @@ interface ISelectExpressionProvider<E> {
     fun getDirectSelection(): KSelect<E>
 }
 
+@Suppress("UNCHECKED_CAST")
 class TupleWrap(val arr: Array<Any>, val elementList: MutableList<out TupleElement<*>>) : Tuple {
 
     override fun toArray(): Array<Any> {
