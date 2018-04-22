@@ -76,7 +76,7 @@ clean and easy to read.
 
 Create instance of AnyDAO:
 ```
-    import com.kameo.jpasugar.AnyDAO
+    import com.kameo.anydao.AnyDAO
     ...
     val em: EntityManager = ...
     val anyDao = AnyDAO(em)
@@ -85,7 +85,7 @@ Use like this:
 ```
     val results: List<UserODB> = anyDao.all(UserODB::class) { it[UserODB::id] lessThan 10L }  
 ```
-There is number of utility methods, most with signature `method(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> (ISugarQuerySelect<RESULT>))`:
+There is number of utility methods, most with parameters `clz: KClass<E>, query: KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>)`:
 * `anyDao.all`
 * `anyDao.one`
 * `anyDao.first`
