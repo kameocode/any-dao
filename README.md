@@ -99,13 +99,25 @@ There is number of utility methods, most with parameters `clz: KClass<E>, query:
 
 Construct paths using indexed access operator or get methods:
 ```
-{ it[UserODB::address, AddressODB::city] like "Cracow" }  
-{ it.get(UserODB::address).get(AddressODB::city) like "Cracow" }  
+    { it[UserODB::address, AddressODB::city] like "Cracow" }  
+    { it.get(UserODB::address).get(AddressODB::city) like "Cracow" }  
 ```
 If fields are private (or entities were written in plain java), 
 use getter references instead of property references: 
 (`UserODB::getEmail` instead of `UserODB::email`)
 
+You can also assign paths and expressionsó to variables and reference them later:
+```
+    val listOfUsers = anyDao.all(UserODB::class) {
+        val taskName = it[UserODB::task, TaskODB::name]
+        val a = it[UserODB::counter].prod(1)
+        val b = it[UserODB::counter].abs()
+        val c = taskName.length()
+        a eq 1      
+        b greatherThan 0     
+        c greatherThan 0     
+    }
+```
 
 ###How to ###
 > Return other type than in query
@@ -117,23 +129,7 @@ Below query returns list of Strings:
         select(it[UserODB::task, TaskODB::name])
      }
 ```
-> Negative predicate
-Add `not` clause
-```
-    val listOfUsers = anyDao.all(UserODB::class) {
-        not { it[UserODB::email] like "task1" }
-    }
-```
-For negating equality, you can use directly:
-```
-    val listOfUsers = anyDao.all(UserODB::class) {
-        it[UserODB::email] notEq "task1" 
-    }
-```
-
-> Or/And predicates
-
-By default, predicates are AND-ed
+> Use logical expressions (or/and/not predicates)
 ```
     val listOfUsers = anyDao.all(UserODB::class) { 
         or {
@@ -151,7 +147,33 @@ or shorter:
         }
     }
 ```
+Clousures _or_, _and_, _not_ can be nested into each other. 
+By default, predicates are AND-ed.
 
+> Use logical expressions (not predicate)
+
+Add `not` clause
+```
+    val listOfUsers = anyDao.all(UserODB::class) {
+        not { it[UserODB::email] like "task1" }
+    }
+```
+For negating equality, you can use directly:
+```
+    val listOfUsers = anyDao.all(UserODB::class) {
+        it[UserODB::email] notEq "task1" 
+    }
+```
+> Use arithmetic/string expressions
+
+These expressions should be accessible directly on expression/path elements:
+```
+    val listOfUsers = anyDao.all(UserODB::class) {
+        it[UserODB::counter].prod(it[UserODB::severity]) eq 1      
+        it[UserODB::counter].abs() greatherThan 2     
+        it[UserODB::email].length() greatherThan 0     
+    }
+```
 > Use joins
 ```
     val listOfUsers = anyDao.all(UserODB::class) {

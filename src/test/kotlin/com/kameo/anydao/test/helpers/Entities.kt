@@ -19,6 +19,7 @@ enum class UserRole {
     NORMAL,
     GUEST
 }
+interface CommonODB
 
 @Entity
 data class UserODB(@Id
@@ -73,9 +74,12 @@ data class UserODB(@Id
 
                    @Temporal(TemporalType.TIMESTAMP)
                    val timestamp: Date = Date(),
-                   val counter: Int = 0
+                   val counter: Int = 0,
+                   val counterNullable: Int? = null,
+                   val counterDouble: Double = 0.0,
+                   val counterDoubleNullable: Double? = null
 
-) {
+): CommonODB {
 
     var login: String? = null
 
@@ -96,5 +100,5 @@ data class TaskODB(@Id
 
                    @ManyToOne(cascade = [CascadeType.ALL])
                    var addressNullable: AddressODB? = null,
-                   val createDateTime: LocalDateTime = LocalDateTime.now());
+                   val createDateTime: LocalDateTime = LocalDateTime.now()): CommonODB;
 

@@ -216,23 +216,22 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-
-    infix fun orderBy(sa: KProperty1<E, *>): PathWrap<E, G> {
+    infix fun orderBy(sa: KProperty1<E, *>): KSelect<G> {
         return this.orderByAsc(sa)
     }
 
-    infix fun orderByAsc(sa: KProperty1<E, *>): PathWrap<E, G> {
+    infix fun orderByAsc(sa: KProperty1<E, *>): KSelect<G> {
         pc.addOrder(cb.asc(root.get<Any>(sa.name)))
         return this
     }
 
-    infix fun orderByDesc(sa: KProperty1<E, *>): PathWrap<E, G> {
+    infix fun orderByDesc(sa: KProperty1<E, *>): KSelect<G> {
         pc.addOrder(cb.desc(root.get<Any>(sa.name)))
         return this
     }
 
-    infix fun orderBy(pathWrap: PathWrap<*, *>): PathWrap<E, G> {
-        pc.addOrder(cb.asc(pathWrap.root))
+    infix fun orderBy(pathWrap: ExpressionWrap<*, *>): KSelect<G> {
+        pc.addOrder(cb.asc(pathWrap.expression))
         return this
     }
 
@@ -276,9 +275,9 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    fun orderBy(sa: KFunction1<E, *>): PathWrap<E, G> = orderBy(+sa)
-    fun orderByAsc(sa: KFunction1<E, *>): PathWrap<E, G> = orderByAsc(+sa)
-    fun orderByDesc(sa: KFunction1<E, *>): PathWrap<E, G> = orderByDesc(+sa)
+    fun orderBy(sa: KFunction1<E, *>): KSelect<G> = orderBy(+sa)
+    fun orderByAsc(sa: KFunction1<E, *>): KSelect<G> = orderByAsc(+sa)
+    fun orderByDesc(sa: KFunction1<E, *>): KSelect<G> = orderByDesc(+sa)
 
     fun <F> get(sa: KFunction1<E, List<F>>): UseGetListOnJoinInstead = get(+sa)
 
@@ -330,6 +329,30 @@ open class PathWrap<E, G> constructor(
         return this;
     }
 
+
+    infix fun groupBy(expr: KProperty1<E, *>): KSelect<G> {
+        pc.groupBy(arrayOf(get(expr)))
+        return this
+    }
+
+    fun groupBy(vararg expr: KProperty1<E, *>): KSelect<G> {
+        pc.groupBy(expr.map { get(it) }.toTypedArray())
+        return this
+    }
+
+    infix fun groupBy(expr: KFunction1<E, *>): KSelect<G> {
+        pc.groupBy(arrayOf(get(expr)))
+        return this
+    }
+
+    fun groupBy(vararg expr: KFunction1<E, *>): KSelect<G> {
+        pc.groupBy(expr.map { get(it) }.toTypedArray())
+        return this
+    }
+
+    fun type(): ExpressionWrap<Class<out E>,G> {
+        return ExpressionWrap<Class<out E>,G>(pc, root.type())
+    }
 }
 
 
@@ -355,32 +378,137 @@ infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) ->
 /**
  * Number extension functions
  */
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> {
-    return ExpressionWrap<NUM, G>(pc, pc.cb.max(root))
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.max(): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.max(expression))
 }
 
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G> {
-    return ExpressionWrap<NUM, G>(pc, pc.cb.min(root))
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.min(): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.min(expression))
 }
 
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G> {
-    return ExpressionWrap<NUM, G>(pc, pc.cb.sum(root))
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.diff(y: NUM): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.diff(expression, y))
 }
 
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.sqrt(): ExpressionWrap<Double, G> {
-    return ExpressionWrap<Double, G>(pc, pc.cb.sqrt(root))
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.diff(y: ExpressionWrap<out NUM, *>): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.diff(expression, y.getJpaExpression()))
 }
 
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.diff(y: NUM): ExpressionWrap<NUM, G> {
-    return ExpressionWrap<NUM, G>(pc, pc.cb.diff(root, y))
+infix fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> NUM.diff(y: ExpressionWrap<out NUM, G>): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(y.pc, y.pc.cb.diff(this, y.getJpaExpression()))
 }
 
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.ave(): ExpressionWrap<Double, G> {
-    return ExpressionWrap(pc, pc.cb.avg(root))
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.sum(): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.sum(expression))
 }
 
-fun <G, NUM : Number, T : PathWrap<NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> {
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.sum(y: ExpressionWrap<out NUM, *>): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.sum(expression, y.getJpaExpression()))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.sum(y: NUM): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.sum(expression, y))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> NUM.sum(y: ExpressionWrap<out NUM, G>): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(y.pc, y.pc.cb.sum(this, y.getJpaExpression()))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.prod(y: NUM): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.prod(expression, y))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.prod(y: ExpressionWrap<out NUM, *>): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(pc, pc.cb.prod(expression, y.getJpaExpression()))
+}
+
+infix fun <G, NUM : Number> NUM.prod(y: ExpressionWrap<out NUM, G>): ExpressionWrap<NUM, G> {
+    return ExpressionWrap<NUM, G>(y.pc, y.pc.cb.prod(this, y.getJpaExpression()))
+}
+
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.quot(y: Number): ExpressionWrap<Number, G> {
+
+    /*
+        val pDouble : Expression<Double> by Delegates.notNull<Expression<Double>>()
+    val pInt : Expression<Int> by Delegates.notNull<Expression<Int>>()
+    val diff: Expression<Number> = pc.cb.quot(pDouble, pInt)
+    val diff2: Expression<Number> = pc.cb.quot(pInt, pDouble)
+
+    val pDouble : Expression<Double> by Delegates.notNull<Expression<Double>>()
+   val di: Expression<Number> = pc.cb.quot(pDouble, pDouble)
+   */
+    return ExpressionWrap<Number, G>(pc, pc.cb.quot(expression, y))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.quot(y: ExpressionWrap<out Number, *>): ExpressionWrap<Number, G> {
+    return ExpressionWrap<Number, G>(pc, pc.cb.quot(expression, y.getJpaExpression()))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> NUM.quot(y: ExpressionWrap<out Number, G>): ExpressionWrap<Number, G> {
+    return ExpressionWrap<Number, G>(y.pc, y.pc.cb.quot(this, y.getJpaExpression()))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.mod(y: Int): ExpressionWrap<Int, G> {
     return ExpressionWrap<Int, G>(pc, pc.cb.mod(expression as Expression<Int>, y))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<out NUM, G>> T.mod(y: ExpressionWrap<out NUM, *>): ExpressionWrap<Int, G> {
+    return ExpressionWrap<Int, G>(pc, pc.cb.mod(expression as Expression<Int>, y.getJpaExpression() as Expression<Int>))
+}
+
+infix fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> Int.mod(y: ExpressionWrap<NUM, G>): ExpressionWrap<Int, G> {
+    return ExpressionWrap<Int, G>(y.pc, y.pc.cb.mod(this, y.getJpaExpression() as Expression<Int>))
+}
+
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.sqrt(): ExpressionWrap<Double, G> {
+    return ExpressionWrap<Double, G>(pc, pc.cb.sqrt(expression))
+}
+
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.abs(): ExpressionWrap<NUM, G> {
+    return ExpressionWrap(pc, pc.cb.abs(expression))
+}
+
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.neg(): ExpressionWrap<NUM, G> {
+    return ExpressionWrap(pc, pc.cb.neg(expression))
+}
+
+fun <G, NUM : Number, T : ExpressionWrap<NUM, G>> T.avg(): ExpressionWrap<Double, G> {
+    return ExpressionWrap(pc, pc.cb.avg(expression))
+}
+
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.gt(f: NUM): KSelect<G> {
+    return greaterThan(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.gt(f: ExpressionWrap<NUM, *>): KSelect<G> {
+    return greaterThan(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.ge(f: NUM): KSelect<G> {
+    return greaterThanOrEqualTo(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.ge(f: ExpressionWrap<NUM, *>): KSelect<G> {
+    return greaterThanOrEqualTo(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lt(f: NUM): KSelect<G> {
+    return lessThan(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.lt(f: ExpressionWrap<NUM, *>): KSelect<G> {
+    return lessThan(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.le(f: NUM): KSelect<G> {
+    return lessThanOrEqualTo(f)
+}
+
+infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.le(f: ExpressionWrap<NUM, *>): KSelect<G> {
+    return lessThanOrEqualTo(f)
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<NUM, G>> T.greaterThan(f: NUM): KSelect<G> {
@@ -513,4 +641,43 @@ fun <G, T : ExpressionWrap<String, G>> T.concat(s: String): ExpressionWrap<Strin
 
 fun <G, T : ExpressionWrap<String, G>> T.concat(expr: ExpressionWrap<String, *>): ExpressionWrap<String, G> {
     return ExpressionWrap(pc, pc.cb.concat(expression, expr.getJpaExpression()))
+}
+
+
+fun <G, T : ExpressionWrap<Boolean, G>> T.isTrue(): KSelect<G> {
+    pc.add({ pc.cb.isTrue(expression) })
+    return this
+}
+
+infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isMember(elem: H): KSelect<G> {
+    pc.add({ pc.cb.isMember(elem, expression) })
+    return this
+}
+
+infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isMember(elem: ExpressionWrap<H, *>): KSelect<G> {
+    pc.add({ pc.cb.isMember(elem.getJpaExpression(), expression) })
+    return this
+}
+
+infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isNotMember(elem: H): KSelect<G> {
+    pc.add({ pc.cb.isNotMember(elem, expression) })
+    return this
+}
+
+infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isNotMember(elem: ExpressionWrap<H, *>): KSelect<G> {
+    pc.add({ pc.cb.isNotMember(elem.getJpaExpression(), expression) })
+    return this
+}
+
+
+fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isEmpty(): KSelect<G> {
+    pc.add({ pc.cb.isEmpty(expression) })
+    return this
+}
+fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isNotEmpty(): KSelect<G> {
+    pc.add({ pc.cb.isNotEmpty(expression) })
+    return this
+}
+fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.size(): ExpressionWrap<Int, G> {
+    return ExpressionWrap(pc, pc.cb.size(expression))
 }

@@ -11,6 +11,7 @@ import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Predicate
 import javax.persistence.criteria.Selection
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty1
 
 open class ExpressionWrap<E, G> constructor(
         val pc: PathContext<G>,
@@ -48,7 +49,9 @@ open class ExpressionWrap<E, G> constructor(
     infix fun <T> literal(t: T): ExpressionWrap<T, G> {
         return ExpressionWrap(pc, pc.cb.literal(t))
     }
-
+    infix fun <T: Any> nullLiteral(t: KClass<T>): ExpressionWrap<T, G> {
+        return ExpressionWrap(pc, pc.cb.nullLiteral(t.java))
+    }
     fun count(): ExpressionWrap<Long, G> {
         return ExpressionWrap(pc, cb.count(expression))
     }
@@ -100,7 +103,7 @@ open class ExpressionWrap<E, G> constructor(
         return this
     }
 
-    infix fun eq(expr: IExpression<E, *>): KSelect<G> {
+    infix fun eq(expr: IExpression<out E, *>): KSelect<G> {
         pc.add({ cb.equal(this.expression, expr.getJpaExpression()) })
         return this
     }
@@ -110,7 +113,7 @@ open class ExpressionWrap<E, G> constructor(
         return this
     }
 
-    infix fun notEq(expr: IExpression<E, *>): KSelect<G> {
+    infix fun notEq(expr: IExpression<out E, *>): KSelect<G> {
         pc.add({ cb.notEqual(this.expression, expr.getJpaExpression()) })
         return this
     }
@@ -120,12 +123,12 @@ open class ExpressionWrap<E, G> constructor(
         return this
     }
 
-    infix fun isIn(expr: ExpressionWrap<E, *>): KSelect<G> {
+    infix fun isIn(expr: ExpressionWrap<out E, *>): KSelect<G> {
         pc.add({ expression.`in`(expr.expression) })
         return this
     }
 
-    infix fun isIn(expr: SubqueryWrap<E, *>): KSelect<G> {
+    infix fun isIn(expr: SubqueryWrap<out E, *>): KSelect<G> {
         pc.add({ expression.`in`(expr.subquery) })
         return this
     }
@@ -135,12 +138,12 @@ open class ExpressionWrap<E, G> constructor(
         return this
     }
 
-    infix fun isNotIn(expr: ExpressionWrap<E, *>): KSelect<G> {
+    infix fun isNotIn(expr: ExpressionWrap<out E, *>): KSelect<G> {
         pc.add({ cb.not(expression.`in`(expr.expression)) })
         return this
     }
 
-    infix fun isNotIn(expr: SubqueryWrap<E, *>): KSelect<G> {
+    infix fun isNotIn(expr: SubqueryWrap<out E, *>): KSelect<G> {
         pc.add({ cb.not(expression.`in`(expr.subquery)) })
         return this
     }
@@ -164,6 +167,5 @@ open class ExpressionWrap<E, G> constructor(
         pc.groupBy(arrayOf(expr))
         return this
     }
-
 
 }

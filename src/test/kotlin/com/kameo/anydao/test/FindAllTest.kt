@@ -4,9 +4,12 @@ import com.kameo.anydao.Page
 import com.kameo.anydao.KQuery
 import com.kameo.anydao.test.helpers.AddressODB
 import com.kameo.anydao.test.helpers.BaseTest
+import com.kameo.anydao.test.helpers.CommonODB
 import com.kameo.anydao.test.helpers.TaskODB
 import com.kameo.anydao.test.helpers.UserODB
+import com.kameo.anydao.wraps.ExpressionWrap
 import com.kameo.anydao.wraps.and
+import com.kameo.anydao.wraps.isTrue
 import com.kameo.anydao.wraps.like
 import com.kameo.anydao.wraps.lower
 import com.kameo.anydao.wraps.max
@@ -343,6 +346,61 @@ class FindAllTest : BaseTest() {
         }
         Assert.assertEquals(setOf(u2, u3).map { it.id }.toSet(), res2.map { it.id }.toSet())
     }
+    @Test
+    fun `should work with not null and null literal`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "email1"), emailNullable = "email1")
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"), emailNullable = "email2")
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"))
+        anyDao.persist(u1, u2, u3)
 
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::emailNullable] eq it.nullLiteral(String::class)
+        }
+        Assert.assertEquals(setOf(u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::emailNullable] eq it.literal("email2")
+        }
+        Assert.assertEquals(setOf(u2).map { it.id }.toSet(), res2.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `should work with isTrue method`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), valid = true)
+        val u2 = UserODB(email = "email1", task = TaskODB(name = "task2"), valid = false)
+        val u3 = UserODB(email = "email1", task = TaskODB(name = "task2"), valid = true)
+        anyDao.persist(u1, u2, u3)
+
+
+        val res1: List<UserODB> = anyDao.all(UserODB::class) {
+            it[UserODB::valid].isTrue()
+        }
+        Assert.assertEquals(setOf(u1.id, u3.id).toSet(), res1.map { it.id }.toSet())
+
+        val res2: List<UserODB> = anyDao.all(UserODB::class) {
+            it[UserODB::valid] eq true
+        }
+        Assert.assertEquals(setOf(u1.id, u3.id).toSet(), res2.map { it.id }.toSet())
+
+
+    }
+
+    @Test
+    fun `should work with type method`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), valid = true)
+        val u2 = UserODB(email = "email1", task = TaskODB(name = "task2"), valid = false)
+        val u3 = UserODB(email = "email1", task = TaskODB(name = "task2"), valid = true)
+        anyDao.persist(u1, u2, u3)
+
+        val res1: List<UserODB> = anyDao.all(UserODB::class) {
+            it.type() eq literal(UserODB::class.java)
+        }
+        Assert.assertEquals(3, res1.size)
+
+        val res2: List<CommonODB> = anyDao.all(CommonODB::class) {
+            it.type() eq literal(UserODB::class.java)
+        }
+        Assert.assertEquals(6, res2.size)
+
+    }
 }
 

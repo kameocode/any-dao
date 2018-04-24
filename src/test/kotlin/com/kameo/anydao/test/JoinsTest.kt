@@ -7,8 +7,13 @@ import com.kameo.anydao.test.helpers.UserODB
 import com.kameo.anydao.test.helpers.UserRole
 import com.kameo.anydao.wraps.and
 import com.kameo.anydao.wraps.greaterThan
+import com.kameo.anydao.wraps.isEmpty
+import com.kameo.anydao.wraps.isMember
+import com.kameo.anydao.wraps.isNotEmpty
+import com.kameo.anydao.wraps.isNotMember
 import com.kameo.anydao.wraps.like
 import com.kameo.anydao.wraps.or
+import com.kameo.anydao.wraps.size
 import org.junit.Assert
 import org.junit.Test
 import javax.persistence.criteria.JoinType
@@ -358,6 +363,74 @@ class JoinsTest : BaseTest() {
         }
         Assert.assertEquals(1, res1.size)
         Assert.assertEquals(listOf(u1).map { it.id }.toList(), res1.map { it.id }.sorted().toList())
+    }
+
+    @Test
+    fun `should work with isMember`() {
+        val t1 =  TaskODB(name = "task1")
+        val t2 = TaskODB(name = "task2")
+        val u1 = UserODB(email = "email1", task = t1,  allTasks = listOf(t1), userRoles6 = listOf("ADMIN"), valid = true)
+        val u2 = UserODB(email = "email2", task = t2, allTasks = listOf(t2), userRoles6 = listOf("NORMAL", "GUEST"), valid = false)
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), userRoles6 = listOf("ADMIN"), valid = false)
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::userRoles6].isMember("GUEST")
+        }
+        Assert.assertEquals(listOf(u2.id), res1.map { it.id }.sorted().toList())
+
+        val res1b = anyDao.all(UserODB::class) {
+            it[UserODB::userRoles6].isMember("GUEST2")
+        }
+        Assert.assertEquals(emptyList<UserODB>(), res1b.map { it.id }.sorted().toList())
+
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::userRoles6].isNotMember("GUEST")
+        }
+        Assert.assertEquals(listOf(u1.id, u3.id), res2.map { it.id }.sorted().toList())
+
+        val res3 = anyDao.all(UserODB::class) {
+            it[UserODB::allTasks].isMember(t1)
+        }
+        Assert.assertEquals(listOf(u1.id), res3.map { it.id }.sorted().toList())
+
+        val res4 = anyDao.all(UserODB::class) {
+            it[UserODB::allTasks].isMember(it[UserODB::task])
+        }
+        Assert.assertEquals(listOf(u1.id, u2.id), res4.map { it.id }.sorted().toList())
+
+        val res5 = anyDao.all(UserODB::class) {
+            it[UserODB::allTasks].isNotMember(it[UserODB::task])
+        }
+        Assert.assertEquals(listOf(u3.id), res5.map { it.id }.sorted().toList())
+    }
+
+
+    @Test
+    fun `should work with size, isEmpty and isNotEmpty`() {
+        val t1 = TaskODB(name = "task1")
+        val t2 = TaskODB(name = "task2")
+        val t3 = TaskODB(name = "task3")
+        val u1 = UserODB(email = "email1", task = t1, allTasks = listOf(t1, t2), userRoles6 = listOf("ADMIN"))
+        val u2 = UserODB(email = "email2", task = t2)
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), allTasks = listOf(t3), userRoles6 = listOf("ADMIN"))
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it[UserODB::allTasks].size() eq 2
+        }
+        Assert.assertEquals(listOf(u1.id), res1.map { it.id }.sorted().toList())
+
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::allTasks].isEmpty()
+        }
+        Assert.assertEquals(listOf(u2.id), res2.map { it.id }.sorted().toList())
+
+        val res3 = anyDao.all(UserODB::class) {
+            it[UserODB::allTasks].isNotEmpty()
+        }
+        Assert.assertEquals(listOf(u1.id, u3.id), res3.map { it.id }.sorted().toList())
+
     }
 
 }
