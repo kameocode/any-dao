@@ -378,8 +378,9 @@ class FindAllTest : BaseTest() {
 
         val res2: List<UserODB> = anyDao.all(UserODB::class) {
             it[UserODB::valid] eq true
+            it orderByDesc UserODB::id
         }
-        Assert.assertEquals(setOf(u1.id, u3.id).toSet(), res2.map { it.id }.toSet())
+        Assert.assertEquals(listOf(u3.id, u1.id).toList(), res2.map { it.id }.toList())
 
 
     }

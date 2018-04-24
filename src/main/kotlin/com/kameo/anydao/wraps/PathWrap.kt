@@ -231,15 +231,17 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    infix fun orderBy(pw: Pair<PathWrap<*, *>, Boolean>) {
+    infix fun orderBy(pw: Pair<PathWrap<*, *>, Boolean>): KSelect<G>  {
         val (pathWrap, asc) = pw
         pc.addOrder(if (asc) cb.asc(pathWrap.root) else cb.desc(pathWrap.root))
+        return this
     }
 
-    fun orderBy(vararg pw: Pair<PathWrap<*, *>, Boolean>) {
+    fun orderBy(vararg pw: Pair<PathWrap<*, *>, Boolean>): KSelect<G>  {
         for ((pathWrap, asc) in pw) {
             pc.addOrder(if (asc) cb.asc(pathWrap.root) else cb.desc(pathWrap.root))
         }
+        return this
     }
 
 
@@ -271,16 +273,9 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    fun orderBy(sa: KFunction1<E, *>): KSelect<G> = orderBy(+sa)
-    fun orderByAsc(sa: KFunction1<E, *>): KSelect<G> = orderByAsc(+sa)
-    fun orderByDesc(sa: KFunction1<E, *>): KSelect<G> = orderByDesc(+sa)
-
-    fun <F> get(sa: KFunction1<E, List<F>>): UseGetListOnJoinInstead = get(+sa)
-
-    @Suppress("UNUSED_PARAMETER")
-    fun <F> get(sa: KProperty1<E, List<F>>): UseGetListOnJoinInstead {
-        return UseGetListOnJoinInstead()
-    }
+    infix fun orderBy(sa: KFunction1<E, *>): KSelect<G> = orderBy(+sa)
+    infix fun orderByAsc(sa: KFunction1<E, *>): KSelect<G> = orderByAsc(+sa)
+    infix fun orderByDesc(sa: KFunction1<E, *>): KSelect<G> = orderByDesc(+sa)
 
 
     infix operator fun <F> get(sa: SingularAttribute<E, F>): PathWrap<F, G> = PathWrap<F, G>(pc, root.get(sa))

@@ -250,4 +250,19 @@ class ClausesTest : BaseTest() {
         Assert.assertEquals(setOf(u3).map { it.id }.toSet(), res5.map { it.id }.toSet())
     }
 
+    @Test
+    fun `should work with empty clauses`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
+        val u2 = UserODB(email = "email1", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email1", task = TaskODB(name = "task2"))
+        anyDao.persist(u1, u2, u3)
+        val res = anyDao.all(UserODB::class) {
+            it.or { }
+            it.and { it.or { } }
+            it.not { }
+            it.orderBy(it[UserODB::email] to true, it[UserODB::task, TaskODB::name] to true)
+        }
+        Assert.assertEquals(setOf(u1, u2, u3).map { it.id }.toSet(), res.map { it.id }.toSet())
+
+    }
 }
