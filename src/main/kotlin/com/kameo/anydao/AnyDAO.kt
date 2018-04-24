@@ -4,7 +4,6 @@ import com.kameo.anydao.context.DeletePathContext
 import com.kameo.anydao.context.QueryPathContext
 import com.kameo.anydao.context.UpdatePathContext
 import com.kameo.anydao.wraps.ExpressionWrap
-import com.kameo.anydao.wraps.PathWrap
 import com.kameo.anydao.wraps.RootWrapUpdate
 import com.kameo.anydao.wraps.greaterThan
 import javax.persistence.EntityManager
@@ -18,18 +17,28 @@ import kotlin.reflect.KProperty1
 
 
 @Suppress("UNUSED_PARAMETER") // parameter resltClass is unused but needed for type safety
-class AnyDAO(val em: EntityManager): EntityManager by em {
+class AnyDAO(val em: EntityManager) : EntityManager by em {
 
-    class PathPairSelect<E, F>(val first: KSelect<E>, val second: KSelect<F>, val distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Pair<E, F>> {
+    class PathPairSelect<E, F>(val first: KSelect<E>, val second: KSelect<F>, var distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Pair<E, F>> {
         override fun isDistinct(): Boolean = distinct
+
+        fun distinct(): KSelect<Pair<E, F>> {
+            this.distinct = true
+            return this;
+        }
 
         override fun getJpaSelection(): Selection<Tuple> {
             return cb.tuple(first.getJpaSelection(), second.getJpaSelection())
         }
     }
 
-    class PathTripleSelect<E, F, G>(val first: KSelect<E>, val second: KSelect<F>, val third: KSelect<G>, val distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Triple<E, F, G>> {
+    class PathTripleSelect<E, F, G>(val first: KSelect<E>, val second: KSelect<F>, val third: KSelect<G>, var distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Triple<E, F, G>> {
         override fun isDistinct(): Boolean = distinct
+
+        fun distinct(): KSelect<Triple<E, F, G>> {
+            this.distinct = true
+            return this;
+        }
 
         override fun getJpaSelection(): Selection<Tuple> {
             return cb.tuple(first.getJpaSelection(), second.getJpaSelection(), third.getJpaSelection())
@@ -40,15 +49,25 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
                                           val second: KSelect<F>,
                                           val third: KSelect<G>,
                                           val fourth: KSelect<H>,
-                                          val distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Quadruple<E, F, G, H>> {
+                                          var distinct: Boolean, val cb: CriteriaBuilder) : KSelect<Quadruple<E, F, G, H>> {
         override fun isDistinct(): Boolean = distinct
 
+        fun distinct():  KSelect<Quadruple<E, F, G, H>> {
+            this.distinct = true
+            return this;
+        }
         override fun getJpaSelection(): Selection<Tuple> {
             return cb.tuple(first.getJpaSelection(), second.getJpaSelection(), third.getJpaSelection(), fourth.getJpaSelection())
         }
     }
-    class PathArraySelect(val distinct: Boolean, val cb: CriteriaBuilder, vararg val pw1: KSelect<*>) : KSelect<Array<Any>> {
+
+    class PathArraySelect(var distinct: Boolean, val cb: CriteriaBuilder, vararg val pw1: KSelect<*>) : KSelect<Array<Any>> {
         override fun isDistinct(): Boolean = distinct
+
+        fun distinct():  KSelect<Array<Any>> {
+            this.distinct = true
+            return this;
+        }
 
         override fun getJpaSelection(): Selection<Tuple> {
             val sel = pw1.map { it.getJpaSelection() }.toTypedArray()
@@ -57,16 +76,27 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
 
     }
 
-    class PathTupleSelect(val distinct: Boolean, val cb: CriteriaBuilder, vararg val selects: KSelect<*>) : KSelect<TupleWrap> {
+    class PathTupleSelect(var distinct: Boolean, val cb: CriteriaBuilder, vararg val selects: KSelect<*>) : KSelect<TupleWrap> {
         override fun isDistinct(): Boolean = distinct
+
+        fun distinct(): KSelect<TupleWrap> {
+            this.distinct = true
+            return this;
+        }
 
         override fun getJpaSelection(): Selection<Tuple> {
             val sel = selects.map { it.getJpaSelection() }.toTypedArray()
             return cb.tuple(*sel)
         }
     }
-    class PathObjectSelect<E : Any>(val clz: KClass<E>, val distinct: Boolean, val cb: CriteriaBuilder, vararg val expr: ExpressionWrap<*, *>) : KSelect<E> {
+
+    class PathObjectSelect<E : Any>(val clz: KClass<E>, var distinct: Boolean, val cb: CriteriaBuilder, vararg val expr: ExpressionWrap<*, *>) : KSelect<E> {
         override fun isDistinct(): Boolean = distinct
+
+        fun distinct(): KSelect<E> {
+            this.distinct = true
+            return this;
+        }
 
         override fun getJpaSelection(): Selection<E> {
             val sel = expr.map { it.getJpaExpression() }.toTypedArray()
@@ -90,7 +120,7 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
 
     fun <E : Any, RESULT : Any> all(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): List<RESULT> {
 
-        val qq: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>) = query ?: {this as KSelect<RESULT>}
+        val qq: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>) = query ?: { this as KSelect<RESULT> }
         val pc = QueryPathContext<RESULT>(clz, em)
         val res = pc.invokeQuery(qq).resultList
         return pc.mapToPluralsIfNeeded<RESULT>(res)
@@ -99,6 +129,7 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
     inline fun <reified E : Any> all(clz: KClass<E>): List<E> {
         return all(clz.java, E::class.java)
     }
+
     inline fun <E : Any, reified RESULT : Any> all(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): List<RESULT> {
         return all(clz.java, RESULT::class.java, query)
     }
@@ -130,7 +161,6 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
     }
 
 
-
     fun <E : Any> exists(clz: KClass<E>, query: KRoot<E>.(KRoot<E>) -> KSelect<*>): Boolean {
         val queryExists: KRoot<E>.(KRoot<E>) -> KSelect<Long> = {
             val invoke: KSelect<*> = query.invoke(it, it)
@@ -160,16 +190,6 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
     inline fun <E : Any, reified RESULT : Any> allMutable(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): MutableList<RESULT> {
         return all(clz.java, RESULT::class.java, query) as MutableList<RESULT>
     }
-
-
-   /* @JvmName("allDefaultReturn")
-    inline fun <reified E : Any> all(clz: KClass<E>, noinline query: KRoot<E>.(KRoot<E>) -> (Int)): List<E> {
-        val queryWrapp: KRoot<E>.(KRoot<E>) -> (KSelect<E>) = {
-            query.invoke(it, it)
-            it
-        }
-        return all(clz.java, E::class.java, queryWrapp)
-    }*/
 
     inline fun <E : Any, reified RESULT : Any> pages(clz: KClass<E>, page: Page = Page(),
                                                      noinline query: KRoot<E>.(KRoot<E>) -> KSelect<RESULT>
@@ -203,11 +223,11 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
         return all(clz.java, RESULT::class.java, wrapperQuery)
     }
 
-   inline fun <E : Any, NUM, reified RESULT : Any> pageSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, num: NUM?, page: Page,
-                                                    noinline query: KRoot<E>.(KRoot<E>) -> KSelect<RESULT>): List<RESULT> where NUM: Number, NUM: Comparable<NUM> {
+    inline fun <E : Any, NUM, reified RESULT : Any> pageSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, num: NUM?, page: Page,
+                                                               noinline query: KRoot<E>.(KRoot<E>) -> KSelect<RESULT>): List<RESULT> where NUM : Number, NUM : Comparable<NUM> {
 
         val wrapperQuery: KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>) = {
-            if (num!=null)
+            if (num != null)
                 this[prop].greaterThan(num)
             this.orderBy(prop)
             val result = query.invoke(this, this);
@@ -218,10 +238,11 @@ class AnyDAO(val em: EntityManager): EntityManager by em {
         }
 
         return all(clz.java, RESULT::class.java, wrapperQuery)
-}
+    }
+
     inline fun <reified E : Any, NUM> pagesSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, page: Page = Page(),
                                                   noinline query: KRoot<E>.(KRoot<E>) -> KSelect<E>
-    ): PagesResult<E> where NUM: Number, NUM: Comparable<NUM> {
+    ): PagesResult<E> where NUM : Number, NUM : Comparable<NUM> {
 
         return object : PagesResult<E>(page.pageSize) {
             var currentpage = page;

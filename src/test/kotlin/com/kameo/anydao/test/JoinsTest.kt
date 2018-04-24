@@ -344,7 +344,7 @@ class JoinsTest : BaseTest() {
                     it like "NORMAL"
                 }
             }
-            selectDistinct(it)
+            select(it).distinct()
         }
 
         Assert.assertEquals(2, res1.size)

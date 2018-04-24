@@ -31,7 +31,7 @@ open class PathWrap<E, G> constructor(
 ) : ExpressionWrap<E, G>(pc, root) {
 
 
-    override fun getDirectSelection(): KSelect<E> {
+    override fun getDirectSelection(): SelectWrap<E> {
         return SelectWrap(root)
     }
 
@@ -46,35 +46,31 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    infix fun <F> select(pw: KMutableProperty1<E, F>): KSelect<F> {
+    infix fun <F> select(pw: KMutableProperty1<E, F>): SelectWrap<F> {
         return select(get(pw))
     }
 
-    infix fun <F> select(pw: ExpressionWrap<F, G>): KSelect<F> {
+    infix fun <F> select(pw: ExpressionWrap<F, G>): SelectWrap<F> {
         return pw.getDirectSelection()
     }
 
-    infix fun <F> selectDistinct(pw: ExpressionWrap<F, G>): KSelect<F> {
-        return SelectWrap(pw.getDirectSelection().getJpaSelection() as Selection<F>, true)
+
+    fun <F, G> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>): AnyDAO.PathPairSelect<F, G> {
+        return AnyDAO.PathPairSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), false, pc.cb)
     }
 
-    fun <F, G> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>, distinct: Boolean = false): AnyDAO.PathPairSelect<F, G> {
-        return AnyDAO.PathPairSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), distinct, pc.cb)
-    }
-
-    fun <F, G, H> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>, pw3: ISelectExpressionProvider<H>, distinct: Boolean = false): AnyDAO.PathTripleSelect<F, G, H> {
-        return AnyDAO.PathTripleSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), pw3.getDirectSelection(), distinct, pc.cb)
+    fun <F, G, H> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>, pw3: ISelectExpressionProvider<H>): AnyDAO.PathTripleSelect<F, G, H> {
+        return AnyDAO.PathTripleSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), pw3.getDirectSelection(), false, pc.cb)
     }
 
     fun <F, G, H, I> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>,
                             pw3: ISelectExpressionProvider<H>,
-                            pw4: ISelectExpressionProvider<I>,
-                            distinct: Boolean = false): AnyDAO.PathQuadrupleSelect<F, G, H, I> {
+                            pw4: ISelectExpressionProvider<I>): AnyDAO.PathQuadrupleSelect<F, G, H, I> {
         return AnyDAO.PathQuadrupleSelect(pw1.getDirectSelection(),
                 pw2.getDirectSelection(),
                 pw3.getDirectSelection(),
                 pw4.getDirectSelection(),
-                distinct, cb)
+                false, cb)
     }
 
     fun selectArray(vararg pw1: ISelectExpressionProvider<*>,
@@ -107,7 +103,7 @@ open class PathWrap<E, G> constructor(
             root: Path<E>
     ) : PathWrap<E, G>(pc, root)
 
-    fun <I, J> ref(ref: PathWrap<I, J>, clause: (PathWrap<I, J>) -> Unit): PathWrap<E, G> {
+      fun <I, J> ref(ref: PathWrap<I, J>, clause: (PathWrap<I, J>) -> Unit): PathWrap<E, G> {
         clause.invoke(ref)
         return this
     }
@@ -350,9 +346,6 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-    fun type(): ExpressionWrap<Class<out E>,G> {
-        return ExpressionWrap<Class<out E>,G>(pc, root.type())
-    }
 }
 
 

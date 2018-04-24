@@ -22,7 +22,7 @@ open class ExpressionWrap<E, G> constructor(
         IExpression<E, G> {
     val cb = pc.cb
 
-    override fun getDirectSelection(): KSelect<E> {
+    override fun getDirectSelection(): SelectWrap<E> {
         return SelectWrap(expression)
     }
 

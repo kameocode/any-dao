@@ -55,11 +55,17 @@ data class Quadruple<out A, out B, out C, out D>(
 interface KSelect<E> {
     fun getJpaSelection(): Selection<*>
     fun isDistinct(): Boolean
+
 }
 
-class SelectWrap<E> constructor(val select: Selection<E>, val distinct: Boolean = false) : KSelect<E> {
+class SelectWrap<E> constructor(val select: Selection<E>, var distinct: Boolean = false) : KSelect<E> {
     override fun getJpaSelection(): Selection<E> {
         return select
+    }
+
+    fun distinct(): KSelect<E> {
+        this.distinct = true
+        return this
     }
 
     override fun isDistinct(): Boolean {

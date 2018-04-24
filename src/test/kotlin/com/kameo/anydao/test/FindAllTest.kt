@@ -384,23 +384,5 @@ class FindAllTest : BaseTest() {
 
     }
 
-    @Test
-    fun `should work with type method`() {
-        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"), valid = true)
-        val u2 = UserODB(email = "email1", task = TaskODB(name = "task2"), valid = false)
-        val u3 = UserODB(email = "email1", task = TaskODB(name = "task2"), valid = true)
-        anyDao.persist(u1, u2, u3)
-
-        val res1: List<UserODB> = anyDao.all(UserODB::class) {
-            it.type() eq literal(UserODB::class.java)
-        }
-        Assert.assertEquals(3, res1.size)
-
-        val res2: List<CommonODB> = anyDao.all(CommonODB::class) {
-            it.type() eq literal(UserODB::class.java)
-        }
-        Assert.assertEquals(6, res2.size)
-
-    }
 }
 

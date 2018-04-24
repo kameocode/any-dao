@@ -176,5 +176,75 @@ class MultiselectTest : BaseTest() {
 
     }
 
+
+    class UserTask2DTO(val userEmail: String, val counter: Int, val taskName: String)
+
+    @Test
+    fun `should return multiselect - distinct`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "t1"), counterNullable = 1)
+        val u2 = UserODB(email = "email1", task = TaskODB(name = "t1"), counterNullable = 1)
+        val u3 = UserODB(email = "email2", task = TaskODB(name = "t2"), counterNullable = 2)
+        anyDao.persist(u1, u2, u3)
+
+        val res: List<UserTask2DTO> = anyDao.all(UserODB::class) {
+
+            val taskName = it[UserODB::task, TaskODB::name]
+            it.select(UserTask2DTO::class,
+                    it[UserODB::email].concat("_").concat(taskName),
+                    it[UserODB::counterNullable],
+                    taskName).distinct()
+        }
+        Assert.assertEquals(2, res.size)
+
+        val res2: List<Pair<String, Int>> = anyDao.all(UserODB::class) {
+            val taskName = it[UserODB::task, TaskODB::name]
+            it.select(taskName,
+                    it[UserODB::counterNullable])
+                    .distinct()
+        }
+        Assert.assertEquals(2, res2.size)
+
+        val res3: List<Triple<String, String, Int>> = anyDao.all(UserODB::class) {
+            val taskName = it[UserODB::task, TaskODB::name]
+            it.select(taskName,
+                    it[UserODB::email].concat("_").concat(taskName),
+                    it[UserODB::counterNullable])
+                    .distinct()
+        }
+        Assert.assertEquals(2, res3.size)
+
+        val res4: List<Quadruple<String, String, Int, Int>> = anyDao.all(UserODB::class) {
+            val taskName = it[UserODB::task, TaskODB::name]
+            it.select(taskName,
+                    it[UserODB::email].concat("_").concat(taskName),
+                    it[UserODB::counterNullable],
+                    it[UserODB::counterNullable]
+            )
+                    .distinct()
+        }
+        Assert.assertEquals(2, res4.size)
+
+        val res5: List<Array<Any>> = anyDao.all(UserODB::class) {
+            val taskName = it[UserODB::task, TaskODB::name]
+            it.selectArray(taskName,
+                    it[UserODB::counterNullable]
+            ).distinct()
+        }
+        Assert.assertEquals(2, res5.size)
+
+        val res6: List<TupleWrap> = anyDao.all(UserODB::class) {
+            val taskName = it[UserODB::task, TaskODB::name]
+            it.selectTuple(taskName,
+                    it[UserODB::counterNullable]
+            ).distinct()
+        }
+        Assert.assertEquals(2, res6.size)
+
+        val res7: List<String> = anyDao.all(UserODB::class) {
+            it.select(it[UserODB::email]).distinct()
+        }
+        Assert.assertEquals(2, res7.size)
+
+    }
 }
 
