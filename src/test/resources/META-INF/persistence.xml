@@ -5,12 +5,12 @@
     <persistence-unit name="test-pu">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <class>com.kameo.anydao.test.helpers.UserODB</class>
-        <class>com.kameo.anydao.test.helpers.TaskODB</class>
-        <class>com.kameo.anydao.test.helpers.AddressODB</class>
+        <class>com.kameocode.anydao.test.helpers.UserODB</class>
+        <class>com.kameocode.anydao.test.helpers.TaskODB</class>
+        <class>com.kameocode.anydao.test.helpers.AddressODB</class>
 
-        <class>com.kameo.anydao.test.helpers.JavaUserODB</class>
-        <class>com.kameo.anydao.test.helpers.JavaAddressODB</class>
+        <class>com.kameocode.anydao.test.helpers.JavaUserODB</class>
+        <class>com.kameocode.anydao.test.helpers.JavaAddressODB</class>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
             <property name="hibernate.connection.driver_class" value="org.h2.Driver" />

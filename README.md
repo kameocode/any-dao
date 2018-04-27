@@ -35,12 +35,10 @@ clean and easy to read.
 ```
     val res = anyDao.all(UserODB::class) {
         it[UserODB::task] isIn subqueryFrom(TaskODB::class) {
+            it[TaskODB::name] like "task1"
             or {
-                it[TaskODB::name] like "task1"
-                and {
-                    it[TaskODB::name] like "task2"
-                    it[TaskODB::createDateTime] lessThan LocalDateTime.now().minusDays(1)
-                }
+                it[TaskODB::name] like "task2"
+                it[TaskODB::createDateTime] lessThan LocalDateTime.now().minusDays(1)
             }
         }
         it[UserODB::userRole] notEq UserRole.ADMIN
@@ -76,7 +74,7 @@ clean and easy to read.
 
 Create instance of AnyDAO:
 ```
-    import com.kameo.anydao.AnyDAO
+    import com.kameocode.anydao.AnyDAO
     ...
     val em: EntityManager = ...
     val anyDao = AnyDAO(em)
@@ -147,8 +145,18 @@ or shorter:
         }
     }
 ```
-Clousures _or_, _and_, _not_ can be nested into each other. 
-By default, predicates are AND-ed.
+By default, predicates are AND-ed. All predicates applied inside `or` are OR-ed.
+For the above example, code will be translated into sql query `[...] city like 'Cracow' and city like 'Warsaw'`. 
+You can also use `or` without clause, like this:
+```
+    val listOfUsers = anyDao.all(UserODB::class) { 
+        it[UserODB::getAddress, AddressODB::city] like "Cracow"
+        or
+        it[UserODB::getAddress, AddressODB::city] like "Warsaw"
+    }
+```
+Expressions _or_, _and_, _not_ can be nested into each other. 
+
 
 > Use logical expressions (not predicate)
 
