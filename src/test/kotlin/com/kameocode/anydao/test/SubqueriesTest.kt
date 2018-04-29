@@ -135,7 +135,7 @@ class SubqueriesTest : BaseTest() {
 
         val res = anyDao.all(UserODB::class) {
             it[UserODB::task] isIn subqueryFrom(TaskODB::class) {
-                orr {
+                or {
                     it[TaskODB::name] like "task1"
                     and {
                         it[TaskODB::name] like "task2"
