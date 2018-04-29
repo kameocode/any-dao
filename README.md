@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/vinga/AnyDAO.svg?branch=master)](https://travis-ci.org/vinga/AnyDAO)
+[![Build Status](https://travis-ci.org/kameocode/any-dao.svg?branch=master)](https://travis-ci.org/kameocode/any-dao)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
 
 # AnyDAO #
