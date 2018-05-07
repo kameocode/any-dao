@@ -10,7 +10,7 @@ clean and easy to read.
 * DSL that is syntactic sugar for JPA criteria builder
 * Shorter and cleaner queries (see examples below)
 * Use of kotlin properties as type-sefe static Metamodel replacement
-* Supports JPA critera update and criteria delete 
+* Supports JPA critera update and criteria delete (compatible with JPA 2.1)
 * One-line pagination with `forEach`, `forEachFlat` support
 * Type-safe multiselects (Pair, Triple, Quadruple)
 
