@@ -278,3 +278,5 @@ These expressions should be accessible directly on expression/path elements:
                 taskName)
     }
 ```
+
+For more examples, see: [tests](src/test/kotlin/com/kameocode/anydao/test/)
