@@ -175,5 +175,4 @@ class DatesTest : BaseTest() {
         Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res1.map { it.id }.toSet())
     }
 
-    //TODO https://www.objectdb.com/java/jpa/query/jpql/date
 }
