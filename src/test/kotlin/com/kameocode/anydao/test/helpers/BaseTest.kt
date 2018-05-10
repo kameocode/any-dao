@@ -1,6 +1,5 @@
 package com.kameocode.anydao.test.helpers
 
-import com.kameocode.anydao.AnyDAO
 import org.junit.After
 import org.junit.Before
 import javax.persistence.EntityManager
