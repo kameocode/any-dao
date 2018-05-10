@@ -38,7 +38,7 @@ javadoc {
     source = sourceSets.main.allJava
     classpath = configurations.compile
 }
-jpaModelgen{
+jpaModelgen {
     jpaModelgenSourcesDir = 'src/generated/java'
 }
 
@@ -101,12 +101,15 @@ uploadArchives {
 
             // repository(url: mavenLocal().url)
 
+            String tossrhUsername = project.hasProperty('ossrhUsername') ? ossrhUsername : ""
+            String tossrhPassword = project.hasProperty('ossrhPassword') ? ossrhPassword : ""
+
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
+                authentication(userName: tossrhUsername, password: tossrhPassword)
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
+                authentication(userName: tossrhUsername, password: tossrhPassword)
             }
 
             pom.project {
