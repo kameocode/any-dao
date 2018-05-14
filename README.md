@@ -153,7 +153,7 @@ or shorter:
     }
 ```
 By default, predicates are AND-ed. All predicates applied inside `or` are OR-ed.
-For the above example, code will be translated into sql query `[...] city like 'Cracow' and city like 'Warsaw'`. 
+For the above example, code will be translated into sql query `[...] or (city like 'Cracow' and city like 'Warsaw')`. 
 You can also use `or` without clause, like this:
 ```
     val listOfUsers = anyDao.all(UserODB::class) { 
@@ -251,7 +251,7 @@ These expressions should be accessible directly on expression/path elements:
 ```
 > Paging
 ```
-    val pagedListOfUsers = anyDao.pages(UserODB::class, Page()) { 
+    val pagedListOfUsers = anyDao.pages(UserODB::class, Page(100)) { 
         it[UserODB::email] like "email1" 
     }
     pagedListOfUsers.forEach { list->
