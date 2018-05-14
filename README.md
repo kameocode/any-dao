@@ -70,7 +70,7 @@ clean and easy to read.
      List<UserODB> result = query.getResultList();
 ```
 
-###How to use: ###
+### How to use:
 
 Add to your project maven dependency:
 ```
@@ -125,7 +125,7 @@ You can also assign paths and expressionsó to variables and reference them late
     }
 ```
 
-###How to ###
+### How to 
 > Return other type than in query
 
 Use `select` as **last** clause in order to auto detect return type. 
