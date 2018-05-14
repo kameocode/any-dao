@@ -17,7 +17,7 @@ plugins {
 
 group 'com.kameocode'
 archivesBaseName = "any-dao"
-version '1.0.0-SNAPSHOT'
+version '1.0.0'
 
 description 'AnyDAO is an Kotlin JPA wrapper library which makes your database queries short, clean and easy to read.'
 
