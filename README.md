@@ -72,13 +72,16 @@ clean and easy to read.
 
 ### How to use:
 
-Add to your project maven dependency:
+Add to your project maven/gradle dependency:
 ```
 <dependency>
     <groupId>com.kameocode</groupId>
     <artifactId>any-dao</artifactId>
     <version>1.0.0</version>
 </dependency>
+```
+```
+compile 'com.kameocode:any-dao:1.0.0'
 ```
 Create instance of AnyDAO:
 ```
