@@ -94,6 +94,8 @@ Use like this:
 ```
     val results: List<UserODB> = anyDao.all(UserODB::class) { it[UserODB::id] lessThan 10L }  
 ```
+Example application with SpringBoot can be found at [any-dao-example](https://github.com/kameocode/any-dao-example).
+
 There is number of utility methods, most with parameters `clz: KClass<E>, query: KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>)`:
 * `anyDao.all`
 * `anyDao.one`
