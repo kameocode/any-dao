@@ -16,6 +16,7 @@ import com.kameocode.anydao.wraps.or
 import com.kameocode.anydao.wraps.size
 import org.junit.Assert
 import org.junit.Test
+import java.lang.IllegalArgumentException
 import javax.persistence.criteria.JoinType
 
 
@@ -88,7 +89,7 @@ class JoinsTest : BaseTest() {
                 it[AddressODB::city] eq "Cracow"
             }
         }
-        Assert.assertEquals(setOf(u1,u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
+        Assert.assertEquals(setOf(u1, u3).map { it.id }.toSet(), res1.map { it.id }.toSet())
     }
 
     @Test
@@ -367,9 +368,9 @@ class JoinsTest : BaseTest() {
 
     @Test
     fun `should work with isMember`() {
-        val t1 =  TaskODB(name = "task1")
+        val t1 = TaskODB(name = "task1")
         val t2 = TaskODB(name = "task2")
-        val u1 = UserODB(email = "email1", task = t1,  allTasks = listOf(t1), userRoles6 = listOf("ADMIN"), valid = true)
+        val u1 = UserODB(email = "email1", task = t1, allTasks = listOf(t1), userRoles6 = listOf("ADMIN"), valid = true)
         val u2 = UserODB(email = "email2", task = t2, allTasks = listOf(t2), userRoles6 = listOf("NORMAL", "GUEST"), valid = false)
         val u3 = UserODB(email = "email3", task = TaskODB(name = "task3"), userRoles6 = listOf("ADMIN"), valid = false)
         anyDao.persist(u1, u2, u3)
@@ -433,4 +434,95 @@ class JoinsTest : BaseTest() {
 
     }
 
+
+    @Test
+    fun `should use isEmpty on list`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "x"), allTasks = listOf(TaskODB(name = "task1")),
+                allAddressSet = setOf(AddressODB(city = "Cracow")),
+                userRoles = setOf(UserRole.ADMIN))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "x"), allTasks = listOf(TaskODB(name = "task1")),
+                allAddressSet = setOf(AddressODB(city = "Cracow")),
+                userRoles = setOf(UserRole.ADMIN))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "x"), allTasks = listOf())
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it.joinList(UserODB::allTasks).isEmpty()
+        }
+        Assert.assertEquals(0, res1.size)
+
+        val res2 = anyDao.all(UserODB::class) {
+            it.joinList(UserODB::allTasks, JoinType.LEFT).isEmpty()
+        }
+        Assert.assertEquals(1, res2.size)
+
+    }
+    @Test
+    fun `should use isEmpty on set`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "x"), allTasks = listOf(TaskODB(name = "task1")),
+                allAddressSet = setOf(AddressODB(city = "Cracow")),
+                userRoles = setOf(UserRole.ADMIN))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "x"), allTasks = listOf(TaskODB(name = "task1")),
+                allAddressSet = setOf(AddressODB(city = "Cracow")),
+                userRoles = setOf(UserRole.ADMIN))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "x"), allTasks = listOf())
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it.joinSet(UserODB::allAddressSet, JoinType.LEFT).isEmpty()
+        }
+        Assert.assertEquals(1, res1.size)
+
+        val res2 = anyDao.all(UserODB::class) {
+            it[UserODB::allAddressSet].isEmpty()
+        }
+        Assert.assertEquals(1, res2.size)
+
+        try {
+            anyDao.all(UserODB::class) {
+                it[UserODB::userRoles].isEmpty()
+            }
+            Assert.fail()
+        } catch (ex: IllegalArgumentException) {
+            //java.lang.IllegalArgumentException: org.hibernate.hql.internal.ast.QuerySyntaxException:
+            // unexpected end of subtree [select generatedAlias0 from com.kameocode.anydao.test.helpers.UserODB as generatedAlias0
+            // where generatedAlias0.userRoles is empty]
+        }
+
+        try {
+            anyDao.all(UserODB::class) {
+                it.joinSet(UserODB::userRoles).isEmpty()
+            }
+            Assert.fail()
+        } catch (ex: IllegalArgumentException) {
+            //java.lang.IllegalArgumentException: org.hibernate.hql.internal.ast.QuerySyntaxException:
+            // unexpected end of subtree [select generatedAlias0 from com.kameocode.anydao.test.helpers.UserODB as generatedAlias0
+            // where generatedAlias0.userRoles is empty]
+        }
+
+    }
+
+
+    @Test
+    fun `should use isEmpty on map`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "x"), allTasks = listOf(TaskODB(name = "task1")),
+                allAddressSet = setOf(AddressODB(city = "Cracow")),
+                userRoles = setOf(UserRole.ADMIN))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "x"), allTasks = listOf(TaskODB(name = "task1")),
+                allAddressSet = setOf(AddressODB(city = "Cracow")),
+                userRoles = setOf(UserRole.ADMIN))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "x"), allTasks = listOf())
+        anyDao.persist(u1, u2, u3)
+
+        val res1 = anyDao.all(UserODB::class) {
+            it.joinList(UserODB::allTasks).isEmpty()
+        }
+        Assert.assertEquals(0, res1.size)
+
+        val res2 = anyDao.all(UserODB::class) {
+            it.joinList(UserODB::allTasks, JoinType.LEFT).isEmpty()
+        }
+        Assert.assertEquals(1, res2.size)
+
+    }
 }

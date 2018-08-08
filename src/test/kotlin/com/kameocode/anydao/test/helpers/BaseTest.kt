@@ -7,7 +7,7 @@ import javax.persistence.Persistence
 
 open class BaseTest {
     private val em: EntityManager = Persistence.createEntityManagerFactory("test-pu").createEntityManager()
-    protected val anyDao = com.kameocode.anydao.AnyDAO(em)
+    protected val anyDao = com.kameocode.anydao.AnyDao(em)
 
     @Before
     fun before() {

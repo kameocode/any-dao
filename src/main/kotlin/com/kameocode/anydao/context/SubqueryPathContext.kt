@@ -11,9 +11,9 @@ import javax.persistence.criteria.Subquery
 @Suppress("UNCHECKED_CAST")
 class SubqueryPathContext<G>(clz: Class<*>,
                              em: EntityManager,
-                             val parentContext: QueryPathContext<G>,
+                             val parentContext: PathContext<G>,
                              val subquery: Subquery<G>)
-    : PathContext<G>(em, parentContext.criteria) {
+    : PathContext<G>(em, parentContext.criteria, parentContext.cb) {
 
     lateinit var selector: KSelect<*> // set after execution
 
@@ -36,7 +36,7 @@ class SubqueryPathContext<G>(clz: Class<*>,
         if (groupBy.isNotEmpty()) {
             subquery.groupBy(groupBy.map { it.getJpaExpression() })
         }
-        return SubqueryWrap(parentContext as QueryPathContext<E>, subquery as Expression<RESULT>, subquery as Subquery<RESULT>)
+        return SubqueryWrap(parentContext as PathContext<E>, subquery as Expression<RESULT>, subquery as Subquery<RESULT>)
     }
 
 

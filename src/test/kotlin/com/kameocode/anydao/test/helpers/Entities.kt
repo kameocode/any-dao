@@ -19,6 +19,7 @@ enum class UserRole {
     NORMAL,
     GUEST
 }
+
 interface CommonODB
 
 @Entity
@@ -43,6 +44,9 @@ data class UserODB(@Id
 
                    @OneToMany(cascade = [CascadeType.ALL])
                    var allTasks: List<TaskODB> = emptyList(),
+
+                   @OneToMany(cascade = [CascadeType.ALL])
+                   var allAddressSet: Set<AddressODB> = emptySet(),
 
                    @Enumerated
                    val userRole: UserRole = UserRole.NORMAL,
@@ -83,7 +87,7 @@ data class UserODB(@Id
                    val counterDouble: Double = 0.0,
                    val counterDoubleNullable: Double? = null
 
-): CommonODB {
+) : CommonODB {
 
     var login: String? = null
 
@@ -107,5 +111,4 @@ data class TaskODB(@Id
 
                    @ManyToOne(cascade = [CascadeType.ALL])
                    var addressNullable: AddressODB? = null,
-                   val createDateTime: LocalDateTime = LocalDateTime.now()): CommonODB;
-
+                   val createDateTime: LocalDateTime = LocalDateTime.now()) : CommonODB;

@@ -2,6 +2,7 @@ package com.kameocode.anydao.wraps
 
 import com.kameocode.anydao.QueryUnit
 import com.kameocode.anydao.context.PathContext
+import com.kameocode.anydao.context.PredicatesExtractor
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Join
 import javax.persistence.criteria.Predicate
@@ -35,7 +36,7 @@ open class JoinWrap<E, G> constructor(pw: PathContext<G>,
         pc.stackNewArray(list)
         onClause.invoke(this, this)
         pc.unstackArray()
-        val predicates = toPredicates(list)
+        val predicates = PredicatesExtractor(cb).toPredicates(list)
         if (predicates.isNotEmpty()) {
             getJpaExpression().on(*predicates.toTypedArray())
         }

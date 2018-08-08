@@ -83,6 +83,9 @@ class UpdateTest : BaseTest() {
 
     }
 
+    //TODO code coverage
+    //TODO https://www.objectdb.com/java/jpa/query/jpql/date
+    //TODO are package names OK?
 
 }
 

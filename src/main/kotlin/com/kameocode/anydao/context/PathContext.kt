@@ -3,7 +3,6 @@ package com.kameocode.anydao.context
 import com.kameocode.anydao.IExpression
 import com.kameocode.anydao.KSelect
 import com.kameocode.anydao.wraps.PathWrap
-import jdk.nashorn.internal.objects.NativeArray.forEach
 import javax.persistence.EntityManager
 import javax.persistence.criteria.CommonAbstractCriteria
 import javax.persistence.criteria.CriteriaBuilder
@@ -17,9 +16,9 @@ val OrPred: () -> Predicate? = { null }
 abstract class PathContext<G>
 constructor(
         val em: EntityManager,
-        open val criteria: CommonAbstractCriteria) {
+        open val criteria: CommonAbstractCriteria,
+        val cb: CriteriaBuilder = em.criteriaBuilder) {
 
-    val cb: CriteriaBuilder = em.criteriaBuilder
     val orders: MutableList<Order> = mutableListOf()
     private val arraysStack: MutableList<MutableList<() -> Predicate?>> = mutableListOf()
     private var currentArray: MutableList<() -> Predicate?> = mutableListOf()
@@ -27,7 +26,7 @@ constructor(
     var skip: Int? = null
     var take: Int? = null
 
-    lateinit var root: Root<Any>
+    open lateinit var root: Root<Any>
         protected set
     lateinit var rootWrap: PathWrap<*, G>
         protected set
@@ -35,85 +34,30 @@ constructor(
         protected set
     private var groupByList: MutableList<IExpression<*, *>>? = null
 
+
     fun addOrder(o: Order) {
         orders.add(o)
     }
-
 
     fun add(function: () -> Predicate?) {
         currentArray.add(function)
     }
 
-    private fun calculateOr(list: List<() -> Predicate?>): Predicate? {
-        val predicates = toPredicates(list)
-        return if (predicates.isNotEmpty())
-            if (predicates.size == 1)
-                predicates[0]
-            else
-                cb.or(*predicates.toTypedArray())
-        else
-            null
-    }
-
-    private fun calculateAnd(list: List<() -> Predicate?>): Predicate? {
-        val predicates = toPredicates(list)
-        return if (predicates.isNotEmpty())
-            if (predicates.size == 1)
-                predicates[0]
-            else
-                cb.and(*predicates.toTypedArray())
-        else
-            null
-    }
-
-    fun toPredicates(list: List<() -> Predicate?>): MutableList<Predicate> {
-        val orPreds = list.find { it== OrPred }
-        if (orPreds!=null) {
-
-            val orChunks : MutableList<Predicate> = mutableListOf()
-            var fi = 0;
-            for ((index, item) in list.withIndex()) {
-                if (item == OrPred) {
-                    val prevList: List<() -> Predicate?> = list.subList(fi, index).toList();
-                    val previous: Predicate? = calculateAnd(prevList)
-                    if (previous!=null) {
-                        orChunks.add(previous)
-                    }
-                    fi = index+1;
-                }
-            }
-            if (fi<list.size) {
-                val prevList: List<() -> Predicate?> = list.subList(fi, list.size).toList();
-                val previous: Predicate? = calculateAnd(prevList)
-                if (previous!=null) {
-                    orChunks.add(previous)
-                }
-            }
-
-            return mutableListOf(cb.or(*orChunks.toTypedArray()))
-
-        }
-        return list.asSequence()
-                .mapNotNull { it.invoke() }
-                .toMutableList()
-    }
-
-
-    fun stackNewArray(newArr: MutableList<() -> Predicate?>) {
+    internal fun stackNewArray(newArr: MutableList<() -> Predicate?>) {
         arraysStack.add(currentArray)
         currentArray = newArr
     }
 
-    fun unstackArray() {
+    internal fun unstackArray() {
         currentArray = arraysStack.last()
         arraysStack.remove(currentArray)
     }
 
 
-    fun getPredicate(): Predicate? {
+    internal fun getPredicate(): Predicate? {
         if (arraysStack.isNotEmpty())
             throw IllegalArgumentException("In or Or clause has not been closed")
-        val predicates = toPredicates(currentArray)
+        val predicates = PredicatesExtractor(cb).toPredicates(currentArray)
         return when {
             predicates.isEmpty() -> null
             predicates.size == 1 -> predicates[0]
@@ -128,6 +72,57 @@ constructor(
     }
 
     protected fun getGroupBy(): List<IExpression<*, *>> = groupByList ?: emptyList()
+
+
+}
+
+internal class PredicatesExtractor(val cb: CriteriaBuilder) {
+    fun toPredicates(list: List<() -> Predicate?>): MutableList<Predicate> {
+        val orPreds = list.find { it == OrPred }
+        if (orPreds != null) {
+
+            val orChunks: MutableList<Predicate> = mutableListOf()
+            var fi = 0;
+            for ((index, item) in list.withIndex()) {
+                if (item == OrPred) {
+                    val prevList: List<() -> Predicate?> = list.subList(fi, index).toList();
+                    val previous: Predicate? = calculateAnd(prevList)
+                    if (previous != null) {
+                        orChunks.add(previous)
+                    }
+                    fi = index + 1;
+                }
+            }
+            if (fi < list.size) {
+                val prevList: List<() -> Predicate?> = list.subList(fi, list.size).toList();
+                val previous: Predicate? = calculateAnd(prevList)
+                if (previous != null) {
+                    orChunks.add(previous)
+                }
+            }
+
+            return mutableListOf(cb.or(*orChunks.toTypedArray()))
+
+        }
+        return list.asSequence()
+                .mapNotNull { it.invoke() }
+                .toMutableList()
+    }
+
+    private fun calculateAnd(list: List<() -> Predicate?>): Predicate? {
+        return aggregatePredicates(list) { cb.and(*it)}
+    }
+
+    private fun aggregatePredicates(list: List<() -> Predicate?>, aggregator: (Array<Predicate>) -> Predicate): Predicate? {
+        val predicates = toPredicates(list)
+        return if (predicates.isNotEmpty())
+            if (predicates.size == 1)
+                predicates[0]
+            else
+                aggregator.invoke(predicates.toTypedArray())
+        else
+            null
+    }
 
 
 }

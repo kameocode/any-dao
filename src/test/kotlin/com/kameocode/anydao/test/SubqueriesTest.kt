@@ -24,7 +24,7 @@ class SubqueriesTest : BaseTest() {
         anyDao.persist(u1, u2, u3)
 
         val res = anyDao.all(UserODB::class) {
-            it.isIn(UserODB::class) {
+            isIn(UserODB::class) {
                 it[UserODB::address, AddressODB::city] like "Cracow"
             }
         }
@@ -123,6 +123,23 @@ class SubqueriesTest : BaseTest() {
             }
         }
         Assert.assertEquals(setOf(u1).map { it.id }.toSet(), res.map { it.id }.toSet())
+
+    }
+
+    @Test
+    fun `should execute subquery with custom select`() {
+        val u1 = UserODB(email = "email1", task = TaskODB(name = "task1"))
+        val u2 = UserODB(email = "email2", task = TaskODB(name = "task2"))
+        val u3 = UserODB(email = "email3", task = TaskODB(name = "task1"))
+        anyDao.persist(u1, u2, u3)
+
+        val res = anyDao.all(UserODB::class) {
+            it[UserODB::task][TaskODB::name] isIn subqueryFrom(TaskODB::class) {
+                it[TaskODB::name] like "task1"
+                select(it[TaskODB::name])
+            }
+        }
+        Assert.assertEquals(setOf(u1, u3).map { it.id }.toSet(), res.map { it.id }.toSet())
 
     }
 

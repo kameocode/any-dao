@@ -1,11 +1,11 @@
 package com.kameocode.anydao.wraps
 
-import com.kameocode.anydao.context.QueryPathContext
+import com.kameocode.anydao.context.PathContext
 import javax.persistence.criteria.Expression
 import javax.persistence.criteria.Subquery
 
 open class SubqueryWrap<E, G>(
-        pw: QueryPathContext<G>,
+        pw: PathContext<G>,
         root: Expression<E>,
         val subquery: Subquery<E>) : ExpressionWrap<E, G>(pw, root) {
 

@@ -4,6 +4,7 @@ import com.kameocode.anydao.IExpression
 import com.kameocode.anydao.ISelectExpressionProvider
 import com.kameocode.anydao.KSelect
 import com.kameocode.anydao.SelectWrap
+import com.kameocode.anydao.context.OrPred
 import com.kameocode.anydao.context.PathContext
 import javax.persistence.criteria.CommonAbstractCriteria
 import javax.persistence.criteria.CriteriaBuilder
@@ -48,9 +49,11 @@ open class ExpressionWrap<E, G> constructor(
     infix fun <T> literal(t: T): ExpressionWrap<T, G> {
         return ExpressionWrap(pc, pc.cb.literal(t))
     }
-    infix fun <T: Any> nullLiteral(t: KClass<T>): ExpressionWrap<T, G> {
+
+    infix fun <T : Any> nullLiteral(t: KClass<T>): ExpressionWrap<T, G> {
         return ExpressionWrap(pc, pc.cb.nullLiteral(t.java))
     }
+
     fun count(): ExpressionWrap<Long, G> {
         return ExpressionWrap(pc, cb.count(expression))
     }
@@ -63,17 +66,17 @@ open class ExpressionWrap<E, G> constructor(
 
 
     open infix fun predicate(predicate: ExpressionWrap<E, G>.(cb: CriteriaBuilder) -> Predicate?): KSelect<G> {
-        pc.add({ predicate.invoke(this, cb) })
+        pc.add { predicate.invoke(this, cb) }
         return this
     }
 
     fun isNull(): KSelect<G> {
-        pc.add({ cb.isNull(expression) })
+        pc.add { cb.isNull(expression) }
         return this
     }
 
     fun isNotNull(): KSelect<G> {
-        pc.add({ cb.isNotNull(expression) })
+        pc.add { cb.isNotNull(expression) }
         return this
     }
 
@@ -81,14 +84,14 @@ open class ExpressionWrap<E, G> constructor(
     @JvmName("isNullInfix")
     @Suppress("UNUSED_PARAMETER")
     infix fun isNull(p: () -> Unit): KSelect<G> {
-        pc.add({ cb.isNull(expression) })
+        pc.add { cb.isNull(expression) }
         return this
     }
 
     @JvmName("isNotNullInfix")
     @Suppress("UNUSED_PARAMETER")
     infix fun isNotNull(p: () -> Unit): KSelect<G> {
-        pc.add({ cb.isNotNull(expression) })
+        pc.add { cb.isNotNull(expression) }
         return this
     }
 
@@ -98,32 +101,32 @@ open class ExpressionWrap<E, G> constructor(
     }
 
     infix fun eq(expr: E): KSelect<G> {
-        pc.add({ cb.equal(this.expression, expr) })
+        pc.add { cb.equal(this.expression, expr) }
         return this
     }
 
     infix fun eq(expr: IExpression<out E, *>): KSelect<G> {
-        pc.add({ cb.equal(this.expression, expr.getJpaExpression()) })
+        pc.add { cb.equal(this.expression, expr.getJpaExpression()) }
         return this
     }
 
     infix fun notEq(expr: E): KSelect<G> {
-        pc.add({ cb.notEqual(this.expression, expr) })
+        pc.add { cb.notEqual(this.expression, expr) }
         return this
     }
 
     infix fun notEq(expr: IExpression<out E, *>): KSelect<G> {
-        pc.add({ cb.notEqual(this.expression, expr.getJpaExpression()) })
+        pc.add { cb.notEqual(this.expression, expr.getJpaExpression()) }
         return this
     }
 
     infix fun isIn(collection: Collection<E>): KSelect<G> {
-        pc.add({ expression.`in`(collection) })
+        pc.add { expression.`in`(collection) }
         return this
     }
 
     infix fun isIn(expr: ExpressionWrap<out E, *>): KSelect<G> {
-        pc.add({ expression.`in`(expr.expression) })
+        pc.add { expression.`in`(expr.expression) }
         return this
     }
 
@@ -133,27 +136,27 @@ open class ExpressionWrap<E, G> constructor(
     }
 
     infix fun isNotIn(collection: Collection<E>): KSelect<G> {
-        pc.add({ cb.not(expression.`in`(collection)) })
+        pc.add { cb.not(expression.`in`(collection)) }
         return this
     }
 
     infix fun isNotIn(expr: ExpressionWrap<out E, *>): KSelect<G> {
-        pc.add({ cb.not(expression.`in`(expr.expression)) })
+        pc.add { cb.not(expression.`in`(expr.expression)) }
         return this
     }
 
     infix fun isNotIn(expr: SubqueryWrap<out E, *>): KSelect<G> {
-        pc.add({ cb.not(expression.`in`(expr.subquery)) })
+        pc.add { cb.not(expression.`in`(expr.subquery)) }
         return this
     }
 
     infix fun exists(expr: SubqueryWrap<*, *>): KSelect<G> {
-        pc.add({ cb.exists(expr.subquery) })
+        pc.add { cb.exists(expr.subquery) }
         return this
     }
 
     infix fun notExists(expr: SubqueryWrap<*, *>): KSelect<G> {
-        pc.add({ cb.not(cb.exists(expr.subquery)) })
+        pc.add { cb.not(cb.exists(expr.subquery)) }
         return this
     }
 
@@ -166,6 +169,12 @@ open class ExpressionWrap<E, G> constructor(
         pc.groupBy(arrayOf(expr))
         return this
     }
+
+    var or: KSelect<G> = this
+        get() {
+            pc.add(OrPred)
+            return this
+        }
 
 }
 
@@ -297,65 +306,65 @@ infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.le(f: Exp
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.greaterThan(f: NUM): KSelect<G> {
-    pc.add({ cb.greaterThan(expression, f) })
+    pc.add { cb.greaterThan(expression, f) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.greaterThan(f: ExpressionWrap<out NUM, *>): KSelect<G> {
-    pc.add({ cb.greaterThan(expression, f.getJpaExpression()) })
+    pc.add { cb.greaterThan(expression, f.getJpaExpression()) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.greaterThanOrEqualTo(f: NUM): KSelect<G> {
-    pc.add({ cb.greaterThanOrEqualTo(expression, f) })
+    pc.add { cb.greaterThanOrEqualTo(expression, f) }
     return this
 }
 
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.greaterThanOrEqualTo(f: ExpressionWrap<out NUM, *>): KSelect<G> {
-    pc.add({ cb.greaterThanOrEqualTo(expression, f.getJpaExpression()) })
+    pc.add { cb.greaterThanOrEqualTo(expression, f.getJpaExpression()) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.lessThan(f: NUM): KSelect<G> {
-    pc.add({ cb.lessThan(expression, f) })
+    pc.add { cb.lessThan(expression, f) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.lessThan(f: ExpressionWrap<out NUM, *>): KSelect<G> {
-    pc.add({ cb.lessThan(expression, f.getJpaExpression()) })
+    pc.add { cb.lessThan(expression, f.getJpaExpression()) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.lessThanOrEqualTo(f: NUM): KSelect<G> {
-    pc.add({ cb.lessThanOrEqualTo(expression, f) })
+    pc.add { cb.lessThanOrEqualTo(expression, f) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.lessThanOrEqualTo(f: ExpressionWrap<out NUM, *>): KSelect<G> {
-    pc.add({ cb.lessThanOrEqualTo(expression, f.getJpaExpression()) })
+    pc.add { cb.lessThanOrEqualTo(expression, f.getJpaExpression()) }
     return this
 }
 
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.between(pair: Pair<NUM, NUM>): KSelect<G> {
-    pc.add({ cb.between(expression, pair.first, pair.second) })
+    pc.add { cb.between(expression, pair.first, pair.second) }
     return this
 }
 
 @JvmName("betweenExpression")
 infix fun <G, NUM : Comparable<NUM>, T : ExpressionWrap<out NUM, G>> T.between(pair: Pair<ExpressionWrap<out NUM, *>, ExpressionWrap<out NUM, *>>): KSelect<G> {
-    pc.add({ cb.between(expression, pair.first.getJpaExpression(), pair.second.getJpaExpression()) })
+    pc.add { cb.between(expression, pair.first.getJpaExpression(), pair.second.getJpaExpression()) }
     return this
 }
 
 
 infix fun <G, T : ExpressionWrap<String, G>> T.like(f: String): KSelect<G> {
-    pc.add({ pc.cb.like(expression, f) })
+    pc.add { pc.cb.like(expression, f) }
     return this
 }
 
 infix fun <G, T : ExpressionWrap<String, G>> T.like(f: ExpressionWrap<String, *>): KSelect<G> {
-    pc.add({ pc.cb.like(expression, f.getJpaExpression()) })
+    pc.add { pc.cb.like(expression, f.getJpaExpression()) }
     return this
 }
 
@@ -426,39 +435,41 @@ fun <G, T : ExpressionWrap<String, G>> T.concat(expr: ExpressionWrap<String, *>)
 
 
 fun <G, T : ExpressionWrap<Boolean, G>> T.isTrue(): KSelect<G> {
-    pc.add({ pc.cb.isTrue(expression) })
+    pc.add { pc.cb.isTrue(expression) }
     return this
 }
 
 infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isMember(elem: H): KSelect<G> {
-    pc.add({ pc.cb.isMember(elem, expression) })
+    pc.add { pc.cb.isMember(elem, expression) }
     return this
 }
 
 infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isMember(elem: ExpressionWrap<H, *>): KSelect<G> {
-    pc.add({ pc.cb.isMember(elem.getJpaExpression(), expression) })
+    pc.add { pc.cb.isMember(elem.getJpaExpression(), expression) }
     return this
 }
 
 infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isNotMember(elem: H): KSelect<G> {
-    pc.add({ pc.cb.isNotMember(elem, expression) })
+    pc.add { pc.cb.isNotMember(elem, expression) }
     return this
 }
 
 infix fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isNotMember(elem: ExpressionWrap<H, *>): KSelect<G> {
-    pc.add({ pc.cb.isNotMember(elem.getJpaExpression(), expression) })
+    pc.add { pc.cb.isNotMember(elem.getJpaExpression(), expression) }
     return this
 }
 
 
 fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isEmpty(): KSelect<G> {
-    pc.add({ pc.cb.isEmpty(expression) })
+    pc.add { pc.cb.isEmpty(expression) }
     return this
 }
+
 fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.isNotEmpty(): KSelect<G> {
-    pc.add({ pc.cb.isNotEmpty(expression) })
+    pc.add { pc.cb.isNotEmpty(expression) }
     return this
 }
+
 fun <G, H, COL : Collection<H>, T : ExpressionWrap<COL, G>> T.size(): ExpressionWrap<Int, G> {
     return ExpressionWrap(pc, pc.cb.size(expression))
 }

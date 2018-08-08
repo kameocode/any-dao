@@ -4,6 +4,7 @@ import com.kameocode.anydao.context.PathContext
 import com.kameocode.anydao.wraps.FromWrap
 import com.kameocode.anydao.wraps.PathWrap
 import com.kameocode.anydao.wraps.RootWrap
+import com.kameocode.anydao.wraps.RootWrapUpdate
 import java.io.Serializable
 import javax.persistence.Tuple
 import javax.persistence.TupleElement

@@ -17,7 +17,7 @@ plugins {
 
 group 'com.kameocode'
 archivesBaseName = "any-dao"
-version '1.0.0'
+version '1.0.1'
 
 description 'AnyDAO is an Kotlin JPA wrapper library which makes your database queries short, clean and easy to read.'
 
@@ -28,6 +28,8 @@ apply plugin: 'kotlin-jpa'
 apply plugin: 'org.jetbrains.dokka'
 apply plugin: 'maven'
 apply plugin: 'signing'
+
+
 sourceCompatibility = 1.8
 
 repositories {
@@ -101,8 +103,6 @@ uploadArchives {
 
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-            // repository(url: mavenLocal().url)
-
             String tossrhUsername = project.hasProperty('ossrhUsername') ? ossrhUsername : ""
             String tossrhPassword = project.hasProperty('ossrhPassword') ? ossrhPassword : ""
 
@@ -113,6 +113,8 @@ uploadArchives {
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
                 authentication(userName: tossrhUsername, password: tossrhPassword)
             }
+            //  repository(url: mavenLocal().url)
+
 
             pom.project {
                 name = "${project.group}:${archivesBaseName}"

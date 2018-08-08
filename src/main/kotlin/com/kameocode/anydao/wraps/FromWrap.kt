@@ -6,6 +6,7 @@ import com.kameocode.anydao.context.PathContext
 import com.kameocode.anydao.unaryPlus
 import javax.persistence.criteria.From
 import javax.persistence.criteria.JoinType
+import javax.persistence.criteria.Path
 import kotlin.reflect.KFunction1
 import kotlin.reflect.KProperty1
 
@@ -38,9 +39,11 @@ open class FromWrap<E, G> constructor(val pw: PathContext<G>,
 
     fun <F> joinList(sa: KProperty1<E, List<F>?>,
                      joinType: JoinType = JoinType.INNER,
-                     andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
-        val join = root.join<E, F>(sa.name, joinType)
-        val jw = JoinWrap(pw, join)
+                     andClause: QueryUnit<FromWrap<F, G>>? = null): ListJoinWrap<F, G> {
+        val join = root.joinList<Any, F>(sa.name, joinType)
+
+        val baseField: Path<F> = root.get<F>(sa.name);
+        val jw = ListJoinWrap(pw, join, baseField )
         if (andClause != null) {
             jw.newAnd()
             andClause.invoke(jw, jw)
@@ -57,9 +60,11 @@ open class FromWrap<E, G> constructor(val pw: PathContext<G>,
 
     fun <F> joinSet(sa: KProperty1<E, Set<F>?>,
                     joinType: JoinType = JoinType.INNER,
-                    andClause: QueryUnit<FromWrap<F, G>>? = null): JoinWrap<F, G> {
-        val join = root.join<E, F>(sa.name, joinType)
-        val jw = JoinWrap(pw, join)
+                    andClause: QueryUnit<FromWrap<F, G>>? = null): SetJoinWrap<F, G> {
+        val join = root.joinSet<Any,F>(sa.name, joinType)
+
+        val baseField: Path<F> = root.get<F>(sa.name);
+        val jw = SetJoinWrap(pw, join, baseField)
         if (andClause != null) {
             jw.newAnd()
             andClause.invoke(jw, jw)
@@ -118,3 +123,4 @@ open class FromWrap<E, G> constructor(val pw: PathContext<G>,
 
 
 }
+

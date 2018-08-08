@@ -3,7 +3,6 @@ package com.kameocode.anydao.test;
 import com.kameocode.anydao.test.helpers.TaskODB;
 import com.kameocode.anydao.test.helpers.UserODB;
 import com.kameocode.anydao.test.helpers.UserRole;
-import org.junit.Test;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -63,6 +62,8 @@ public class PlainJpaQueries {
         );
         TypedQuery<UserODB> query = em.createQuery(criteriaQuery);
         List<UserODB> result = query.getResultList();
+
+
         return result;
     }
 

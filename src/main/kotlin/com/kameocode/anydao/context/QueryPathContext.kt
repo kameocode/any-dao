@@ -1,7 +1,6 @@
 package com.kameocode.anydao.context
 
 
-import com.kameocode.anydao.AnyDAO
 import com.kameocode.anydao.KSelect
 import com.kameocode.anydao.KRoot
 import com.kameocode.anydao.Quadruple
@@ -39,6 +38,7 @@ class QueryPathContext<G>(clz: Class<*>,
     }
 
 
+
     private fun calculateWhere(em: EntityManager): TypedQuery<*> {
         getPredicate()?.let {
             criteria.where(it)
@@ -62,12 +62,12 @@ class QueryPathContext<G>(clz: Class<*>,
 
 
     fun <RESULT : Any> mapToPluralsIfNeeded(res: RESULT): RESULT {
-        if (selector is com.kameocode.anydao.AnyDAO.PathArraySelect ) {
+        if (selector is com.kameocode.anydao.AnyDao.PathArraySelect ) {
             return res;
         }
-        if (selector is com.kameocode.anydao.AnyDAO.PathTupleSelect) {
+        if (selector is com.kameocode.anydao.AnyDao.PathTupleSelect) {
             val row = res as Array<Any>
-            val elementList = (selector as com.kameocode.anydao.AnyDAO.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
+            val elementList = (selector as com.kameocode.anydao.AnyDao.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
             return  TupleWrap(row, elementList) as RESULT
         }
 
@@ -83,12 +83,12 @@ class QueryPathContext<G>(clz: Class<*>,
     }
 
     fun <RESULT : Any> mapToPluralsIfNeeded(res: List<RESULT>): List<RESULT> {
-        if (selector is com.kameocode.anydao.AnyDAO.PathArraySelect) {
+        if (selector is com.kameocode.anydao.AnyDao.PathArraySelect) {
             return res;
         }
-        if (selector is com.kameocode.anydao.AnyDAO.PathTupleSelect && res.isNotEmpty() && res.first() is Array<*>) {
+        if (selector is com.kameocode.anydao.AnyDao.PathTupleSelect && res.isNotEmpty() && res.first() is Array<*>) {
             val rows = res as List<Array<Any>>
-            val elementList = (selector as com.kameocode.anydao.AnyDAO.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
+            val elementList = (selector as com.kameocode.anydao.AnyDao.PathTupleSelect).selects.map { it.getJpaSelection() }.toMutableList()
             return rows.map { TupleWrap(it, elementList) as RESULT };
         }
         if (res.isNotEmpty() && /*!selector.isSingle() &&*/ res.first() is Array<*>) {

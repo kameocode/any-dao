@@ -7,6 +7,7 @@ import com.kameocode.anydao.KSelect
 import com.kameocode.anydao.SelectWrap
 import com.kameocode.anydao.context.OrPred
 import com.kameocode.anydao.context.PathContext
+import com.kameocode.anydao.context.PredicatesExtractor
 import com.kameocode.anydao.context.QueryPathContext
 import com.kameocode.anydao.context.SubqueryPathContext
 import com.kameocode.anydao.unaryPlus
@@ -15,7 +16,6 @@ import javax.persistence.criteria.Path
 import javax.persistence.criteria.Predicate
 import javax.persistence.criteria.Subquery
 import javax.persistence.metamodel.SingularAttribute
-import kotlin.properties.Delegates
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction1
 import kotlin.reflect.KMutableProperty1
@@ -26,7 +26,6 @@ open class PathWrap<E, G> constructor(
         pc: PathContext<G>,
         open val root: Path<E>
 ) : ExpressionWrap<E, G>(pc, root) {
-
 
     override fun getDirectSelection(): SelectWrap<E> {
         return SelectWrap(root)
@@ -43,6 +42,10 @@ open class PathWrap<E, G> constructor(
     }
 
 
+    infix fun <F> select(pw: KProperty1<E, F>): SelectWrap<F> {
+        return select(get(pw))
+    }
+
     infix fun <F> select(pw: KMutableProperty1<E, F>): SelectWrap<F> {
         return select(get(pw))
     }
@@ -52,18 +55,18 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    fun <F, G> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>): com.kameocode.anydao.AnyDAO.PathPairSelect<F, G> {
-        return com.kameocode.anydao.AnyDAO.PathPairSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), false, pc.cb)
+    fun <F, G> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>): com.kameocode.anydao.AnyDao.PathPairSelect<F, G> {
+        return com.kameocode.anydao.AnyDao.PathPairSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), false, pc.cb)
     }
 
-    fun <F, G, H> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>, pw3: ISelectExpressionProvider<H>): com.kameocode.anydao.AnyDAO.PathTripleSelect<F, G, H> {
-        return com.kameocode.anydao.AnyDAO.PathTripleSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), pw3.getDirectSelection(), false, pc.cb)
+    fun <F, G, H> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>, pw3: ISelectExpressionProvider<H>): com.kameocode.anydao.AnyDao.PathTripleSelect<F, G, H> {
+        return com.kameocode.anydao.AnyDao.PathTripleSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), pw3.getDirectSelection(), false, pc.cb)
     }
 
     fun <F, G, H, I> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>,
                             pw3: ISelectExpressionProvider<H>,
-                            pw4: ISelectExpressionProvider<I>): com.kameocode.anydao.AnyDAO.PathQuadrupleSelect<F, G, H, I> {
-        return com.kameocode.anydao.AnyDAO.PathQuadrupleSelect(pw1.getDirectSelection(),
+                            pw4: ISelectExpressionProvider<I>): com.kameocode.anydao.AnyDao.PathQuadrupleSelect<F, G, H, I> {
+        return com.kameocode.anydao.AnyDao.PathQuadrupleSelect(pw1.getDirectSelection(),
                 pw2.getDirectSelection(),
                 pw3.getDirectSelection(),
                 pw4.getDirectSelection(),
@@ -71,17 +74,17 @@ open class PathWrap<E, G> constructor(
     }
 
     fun selectArray(vararg pw1: ISelectExpressionProvider<*>,
-                    distinct: Boolean = false): com.kameocode.anydao.AnyDAO.PathArraySelect {
-        return com.kameocode.anydao.AnyDAO.PathArraySelect(distinct, pc.cb, *pw1.map { it.getDirectSelection() }.toTypedArray())
+                    distinct: Boolean = false): com.kameocode.anydao.AnyDao.PathArraySelect {
+        return com.kameocode.anydao.AnyDao.PathArraySelect(distinct, pc.cb, *pw1.map { it.getDirectSelection() }.toTypedArray())
     }
 
     fun selectTuple(vararg pw1: ISelectExpressionProvider<*>,
-                    distinct: Boolean = false): com.kameocode.anydao.AnyDAO.PathTupleSelect {
-        return com.kameocode.anydao.AnyDAO.PathTupleSelect(distinct, pc.cb, *pw1.map { it.getDirectSelection() }.toTypedArray())
+                    distinct: Boolean = false): com.kameocode.anydao.AnyDao.PathTupleSelect {
+        return com.kameocode.anydao.AnyDao.PathTupleSelect(distinct, pc.cb, *pw1.map { it.getDirectSelection() }.toTypedArray())
     }
 
-    fun <F : Any> select(clz: KClass<F>, vararg expr: ExpressionWrap<*, *>, distinct: Boolean = false): com.kameocode.anydao.AnyDAO.PathObjectSelect<F> {
-        return com.kameocode.anydao.AnyDAO.PathObjectSelect(clz, distinct, pc.cb, *expr)
+    fun <F : Any> select(clz: KClass<F>, vararg expr: ExpressionWrap<*, *>, distinct: Boolean = false): com.kameocode.anydao.AnyDao.PathObjectSelect<F> {
+        return com.kameocode.anydao.AnyDao.PathObjectSelect(clz, distinct, pc.cb, *expr)
     }
 
     infix fun eqId(id: Long): KSelect<G> {
@@ -100,7 +103,7 @@ open class PathWrap<E, G> constructor(
     }
 
 
-    class ClosureWrap<E, G>(//var innerList:MutableList<() -> Predicate?> = mutableListOf<() -> Predicate?>(),
+    class ClosureWrap<E, G>(
             pc: PathContext<G>,
             root: Path<E>
     ) : PathWrap<E, G>(pc, root)
@@ -166,7 +169,7 @@ open class PathWrap<E, G> constructor(
     }
 
     protected fun toPredicates(list: MutableList<() -> Predicate?>): MutableList<Predicate> {
-        return pc.toPredicates(list)
+        return PredicatesExtractor(cb).toPredicates(list)
     }
 
     fun <J : Any> isIn(clz: KClass<J>, subqueryQuery: KRoot<J>.(KRoot<J>) -> (KSelect<E>)): PathWrap<E, G> {
@@ -210,7 +213,7 @@ open class PathWrap<E, G> constructor(
 
     fun <E : Any, RESULT> subqueryFrom(clz: KClass<E>, query: RootWrap<E, E>.(RootWrap<E, E>) -> (KSelect<RESULT>)): SubqueryWrap<RESULT, G> {
         val criteriaQuery = pc.criteria as CriteriaQuery<E>
-        val subqueryPc = SubqueryPathContext(clz.java, pc.em, pc as QueryPathContext<G>, criteriaQuery.subquery(clz.java) as Subquery<G>)
+        val subqueryPc = SubqueryPathContext(clz.java, pc.em, pc, criteriaQuery.subquery(clz.java) as Subquery<G>)
         val returnedExpression = subqueryPc.invokeQuery(query)
 
         return returnedExpression as SubqueryWrap<RESULT, G>
@@ -241,6 +244,7 @@ open class PathWrap<E, G> constructor(
 
     @JvmName("getNullable")
     infix operator fun <F> get(sa: KProperty1<E, F?>): PathWrap<F, G> = PathWrap(pc, root.get(sa.name))
+
 
     @JvmName("getNullable")
     infix operator fun <F> get(sa: KFunction1<E, F?>): PathWrap<F, G> = get(+sa)
@@ -299,11 +303,7 @@ open class PathWrap<E, G> constructor(
         pc.groupBy(expr.map { get(it) }.toTypedArray())
         return this
     }
-    var or: KSelect<G> = this
-        get() {
-            pc.add(OrPred)
-            return this
-        }
+
 }
 
 
@@ -311,6 +311,7 @@ open class PathWrap<E, G> constructor(
 infix fun <E, G, T : PathWrap<E, G>> T.or(orClause: T.(T) -> Unit): T {
     return this.internalOr(orClause as PathWrap<E, G>.(PathWrap<E, G>) -> Unit) as T
 }
+
 @Suppress("UNCHECKED_CAST")
 infix fun <E, G, T : PathWrap<E, G>> T.orr(clause: T.(T) -> Unit): T {
     pc.add(OrPred)
@@ -331,3 +332,5 @@ infix fun <E, G, T : PathWrap<E, G>> T.clause(orClause: T.(T) -> Unit): T.(T) ->
     return orClause
 }
 
+operator fun  <E, G, F>  KProperty1<E, F>.get(sa: PathWrap<E, G>): PathWrap<F, G> =
+        PathWrap(sa.pc, sa.root.get(this.name) )

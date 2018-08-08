@@ -1,9 +1,9 @@
 [![Build Status](https://travis-ci.org/kameocode/any-dao.svg?branch=master)](https://travis-ci.org/kameocode/any-dao)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Maven central](https://maven-badges.herokuapp.com/maven-central/com.kameocode/any-dao/badge.svg)](http://repo1.maven.org/maven2/com/kameocode/any-dao/1.0.0/)
-# AnyDAO #
+# AnyDao #
 
-AnyDAO is a [Kotlin](http://www.kotlinlang.org/) JPA (Java Persistence Api) wrapper library which makes your queries short, 
+AnyDao is a [Kotlin](http://www.kotlinlang.org/) JPA (Java Persistence Api) wrapper library which makes your queries short, 
 clean and easy to read. 
 
 
@@ -15,7 +15,7 @@ clean and easy to read.
 * Type-safe multiselects (Pair, Triple, Quadruple)
 
 
-**AnyDAO query (kotlin):**
+**AnyDao query (kotlin):**
 ```
     val results = anyDao.all(UserODB::class) { 
         it[UserODB::email] like "email1" 
@@ -31,7 +31,7 @@ clean and easy to read.
     TypedQuery<UserODB> query = em.createQuery(criteriaQuery);
     List<UserODB> result = query.getResultList();
 ```  
-**More complicated example - AnyDAO query (kotlin):**
+**More complicated example - AnyDao query (kotlin):**
 ```
     val res = anyDao.all(UserODB::class) {
         it[UserODB::task] isIn subqueryFrom(TaskODB::class) {
@@ -83,12 +83,12 @@ Add to your project maven/gradle dependency:
 ```
 compile 'com.kameocode:any-dao:1.0.0'
 ```
-Create instance of AnyDAO:
+Create instance of AnyDao:
 ```
-    import com.kameocode.anydao.AnyDAO
+    import com.kameocode.anydao.AnyDao
     ...
     val em: EntityManager = ...
-    val anyDao = AnyDAO(em)
+    val anyDao = AnyDao(em)
 ```
 Use like this:
 ```
@@ -255,6 +255,25 @@ These expressions should be accessible directly on expression/path elements:
         it predicate { cb -> cb.equal(root.get<String>("email"), "email1") }
     }
 ```
+> Combine query from external predicates 
+```
+ // define predicates as function literals with receiver of proper type:
+ 
+ fun KRoot<UserODB>.hasHighCounter(): KSelect<UserODB> {
+    return this[UserODB::counter] ge 15
+ }
+ private fun KRoot<UserODB>.hasEmail1InName() =
+     this[UserODB::email] like "%email1%"
+ 
+   
+ // then use them wherever makes sense:
+ val res = anyDao.all(UserODB::class) {
+    hasHighCounter()
+    or
+    hasEmail1InName()
+ }
+```
+
 > Paging
 ```
     val pagedListOfUsers = anyDao.pages(UserODB::class, Page(100)) { 
@@ -293,3 +312,10 @@ These expressions should be accessible directly on expression/path elements:
 ```
 
 For more examples, see: [tests](src/test/kotlin/com/kameocode/anydao/test/)
+
+
+**Changelog**
+
+**v 1.0.1**
+* AnyDao is now AnyDao 
+* added support for pure java classes for anyDao.exist and anyDao.count 
