@@ -77,11 +77,11 @@ Add to your project maven/gradle dependency:
 <dependency>
     <groupId>com.kameocode</groupId>
     <artifactId>any-dao</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 ```
-compile 'com.kameocode:any-dao:1.0.0'
+compile 'com.kameocode:any-dao:1.0.1'
 ```
 Create instance of AnyDao:
 ```
@@ -319,3 +319,6 @@ For more examples, see: [tests](src/test/kotlin/com/kameocode/anydao/test/)
 **v 1.0.1**
 * AnyDao is now AnyDao 
 * added support for pure java classes for anyDao.exist and anyDao.count 
+
+**v 1.0.2**
+* Support for nullable select
