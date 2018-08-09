@@ -13,6 +13,7 @@ clean and easy to read.
 * Supports JPA critera update and criteria delete (compatible with JPA 2.1)
 * One-line pagination with `forEach`, `forEachFlat` support
 * Type-safe multiselects (Pair, Triple, Quadruple)
+* Using DSL directly with spring data repositories is available with [any-dao-spring](https://github.com/kameocode/any-dao-spring)
 
 
 **AnyDao query (kotlin):**
