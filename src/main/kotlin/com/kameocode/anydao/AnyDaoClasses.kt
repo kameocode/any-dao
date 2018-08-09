@@ -4,7 +4,6 @@ import com.kameocode.anydao.context.PathContext
 import com.kameocode.anydao.wraps.FromWrap
 import com.kameocode.anydao.wraps.PathWrap
 import com.kameocode.anydao.wraps.RootWrap
-import com.kameocode.anydao.wraps.RootWrapUpdate
 import java.io.Serializable
 import javax.persistence.Tuple
 import javax.persistence.TupleElement
@@ -16,7 +15,7 @@ import kotlin.reflect.KProperty1
 
 typealias KRoot<E> = RootWrap<E, E>
 typealias QueryUnit<T> = T.(T) -> Unit
-typealias KQuery<E, RESULT> = KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>)
+typealias KQuery<E, RESULT> = RootWrap<E, E>.(RootWrap<E, E>) -> (KSelect<RESULT>)
 typealias KClause<E> = PathWrap<E, Any>.(PathWrap<E, Any>) -> Unit
 typealias KFromClause<E> = FromWrap<E, Any>.(FromWrap<E, Any>) -> Unit
 
@@ -116,12 +115,12 @@ class TupleWrap(private val arr: Array<Any>,
 
 }
 
-data class Page(val pageSize: Int = 10, val offset: Int = 0) {
-    fun next() = Page(pageSize, offset + pageSize)
+data class KPage(val pageSize: Int = 10, val offset: Int = 0) {
+    fun next() = KPage(pageSize, offset + pageSize)
 }
 
-abstract class PagesResult<E>(val pageSize: Int) {
-    abstract fun invoke(): List<E>
+abstract class KPagesResult<E>(val pageSize: Int) {
+    internal abstract fun invoke(): List<E>
 
     abstract protected fun beforeForeach()
 

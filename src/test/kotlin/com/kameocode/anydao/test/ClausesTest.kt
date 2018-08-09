@@ -4,7 +4,7 @@ import com.kameocode.anydao.KClause
 import com.kameocode.anydao.KFromClause
 import com.kameocode.anydao.KQuery
 import com.kameocode.anydao.KRoot
-import com.kameocode.anydao.Page
+import com.kameocode.anydao.KPage
 import com.kameocode.anydao.test.helpers.AddressODB
 import com.kameocode.anydao.test.helpers.BaseTest
 import com.kameocode.anydao.test.helpers.TaskODB
@@ -320,8 +320,8 @@ class ClausesTest : BaseTest() {
             // expected
         }
         val first = anyDao.first(UserODB::class, query)
-        val page = anyDao.page(UserODB::class, Page(), query)
-        val pages = anyDao.pages(UserODB::class, Page(), query)
+        val page = anyDao.page(UserODB::class, KPage(), query)
+        val pages = anyDao.pages(UserODB::class, KPage(), query)
         Assert.assertEquals(setOf(u2.task, u3.task).map { it.id }.toSet(), res1.map { it.id }.toSet())
 
         Assert.assertEquals(2, count)

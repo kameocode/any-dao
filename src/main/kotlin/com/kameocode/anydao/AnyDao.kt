@@ -125,7 +125,7 @@ class AnyDao(val em: EntityManager) {
     }
 
 
-    fun <E : Any, RESULT : Any> all(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): List<RESULT> {
+    fun <E : Any, RESULT> all(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): List<RESULT> {
         val qq: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>) = query ?: { this as KSelect<RESULT> }
         val pc = QueryPathContext<RESULT>(clz, em)
         val res = pc.invokeQuery(qq).resultList
@@ -136,23 +136,23 @@ class AnyDao(val em: EntityManager) {
         return all(clz.java, E::class.java)
     }
 
-    inline fun <E : Any, reified RESULT : Any> all(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): List<RESULT> {
+    inline fun <E : Any, reified RESULT> all(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): List<RESULT> {
         return all(clz.java, RESULT::class.java, query)
     }
 
     @Throws(NoResultException::class)
-    fun <E : Any, RESULT : Any> one(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT {
+    fun <E : Any, RESULT> one(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT {
         val pc = QueryPathContext<RESULT>(clz, em)
         val jpaQuery = pc.invokeQuery(query)
         return pc.mapToPluralsIfNeeded<RESULT>(jpaQuery.singleResult)
     }
 
     @Throws(NoResultException::class)
-    inline fun <E : Any, reified RESULT : Any> one(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT {
+    inline fun <E : Any, reified RESULT> one(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT {
         return one(clz.java, RESULT::class.java, query)
     }
 
-    fun <E : Any, RESULT : Any> first(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT? {
+    fun <E : Any, RESULT> first(clz: Class<E>, resultClass: Class<RESULT>, query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT? {
         val pc = QueryPathContext<RESULT>(clz, em)
         val jpaQuery = pc.invokeQuery(query)
         jpaQuery.maxResults = 1
@@ -192,29 +192,29 @@ class AnyDao(val em: EntityManager) {
         return one(clz, Long::class.java, wrapperQuery)
     }
 
-    inline fun <E : Any, reified RESULT : Any> first(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT? {
+    inline fun <E : Any, reified RESULT> first(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): RESULT? {
         return first(clz.java, RESULT::class.java, query)
     }
 
-    inline fun <E : Any, reified RESULT : Any> allMutable(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): MutableList<RESULT> {
+    inline fun <E : Any, reified RESULT> allMutable(clz: KClass<E>, noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)? = null): MutableList<RESULT> {
         return all(clz.java, RESULT::class.java, query) as MutableList<RESULT>
     }
 
-    inline fun <E : Any, reified RESULT : Any> pages(clz: KClass<E>, page: Page = Page(),
-                                                     noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)
-    ): PagesResult<RESULT> {
+    inline fun <E : Any, reified RESULT> pages(clz: KClass<E>, KPage: KPage = KPage(),
+                                               noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)
+    ): KPagesResult<RESULT> {
 
-        return pages(clz.java, RESULT::class.java, page, query)
+        return pages(clz.java, RESULT::class.java, KPage, query)
     }
 
-    fun <E : Any, RESULT : Any> pages(clz: Class<E>, resultClz: Class<RESULT>, page: Page = Page(),
-                                      query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)
-    ): PagesResult<RESULT> {
-        return object : PagesResult<RESULT>(page.pageSize) {
-            var currentpage = page;
+    fun <E : Any, RESULT> pages(clz: Class<E>, resultClz: Class<RESULT>, KPage: KPage = KPage(),
+                                query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)
+    ): KPagesResult<RESULT> {
+        return object : KPagesResult<RESULT>(KPage.pageSize) {
+            var currentpage = KPage;
 
             override fun beforeForeach() {
-                currentpage = page
+                currentpage = KPage
             }
 
             override fun invoke(): List<RESULT> {
@@ -225,39 +225,39 @@ class AnyDao(val em: EntityManager) {
         };
     }
 
-    inline fun <E : Any, reified RESULT : Any> page(clz: KClass<E>, page: Page,
-                                                    noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> {
+    inline fun <E : Any, reified RESULT> page(clz: KClass<E>, KPage: KPage,
+                                              noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> {
 
-        return page(clz.java, RESULT::class.java, page, query)
+        return page(clz.java, RESULT::class.java, KPage, query)
     }
 
-    fun <E : Any, RESULT : Any> page(clz: Class<E>, resultClass: Class<RESULT>, page: Page,
-                                     query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> {
+    fun <E : Any, RESULT> page(clz: Class<E>, resultClass: Class<RESULT>, KPage: KPage,
+                               query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> {
 
         val wrapperQuery: KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>) = {
             val result = query.invoke(this, this);
-            this.limit(page.pageSize);
-            this.skip(page.offset)
+            this.limit(KPage.pageSize);
+            this.skip(KPage.offset)
             result;
         }
 
         return all(clz, resultClass, wrapperQuery)
     }
 
-    inline fun <E : Any, NUM, reified RESULT : Any> pageSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, num: NUM?, page: Page,
-                                                               noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> where NUM : Number, NUM : Comparable<NUM> {
-        return pageSorted(clz.java, RESULT::class.java, prop, num, page, query);
+    inline fun <E : Any, NUM, reified RESULT> pageSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, num: NUM?, KPage: KPage,
+                                                         noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> where NUM : Number, NUM : Comparable<NUM> {
+        return pageSorted(clz.java, RESULT::class.java, prop, num, KPage, query);
     }
 
-    fun <E : Any, NUM, RESULT : Any> pageSorted(clz: Class<E>, resultClz: Class<RESULT>, prop: KProperty1<E, NUM>, num: NUM?, page: Page,
-                                                query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> where NUM : Number, NUM : Comparable<NUM> {
+    fun <E : Any, NUM, RESULT> pageSorted(clz: Class<E>, resultClz: Class<RESULT>, prop: KProperty1<E, NUM>, num: NUM?, KPage: KPage,
+                                          query: (KRoot<E>.(KRoot<E>) -> KSelect<RESULT>)): List<RESULT> where NUM : Number, NUM : Comparable<NUM> {
 
         val wrapperQuery: KRoot<E>.(KRoot<E>) -> (KSelect<RESULT>) = {
             if (num != null)
                 this[prop].greaterThan(num)
             this.orderBy(prop)
             val result = query.invoke(this, this);
-            this.limit(page.pageSize);
+            this.limit(KPage.pageSize);
             this.skip(0)
 
             result;
@@ -267,22 +267,22 @@ class AnyDao(val em: EntityManager) {
     }
 
 
-    inline fun <reified E : Any, reified NUM> pagesSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, page: Page = Page(),
+    inline fun <reified E : Any, reified NUM> pagesSorted(clz: KClass<E>, prop: KProperty1<E, NUM>, KPage: KPage = KPage(),
                                                           noinline query: (KRoot<E>.(KRoot<E>) -> KSelect<E>)
-    ): PagesResult<E> where NUM : Number, NUM : Comparable<NUM> {
-        return pagesSorted(clz.java, E::class.java, prop, page, query);
+    ): KPagesResult<E> where NUM : Number, NUM : Comparable<NUM> {
+        return pagesSorted(clz.java, E::class.java, prop, KPage, query);
     }
 
-    fun <E : Any, NUM> pagesSorted(clz: Class<E>, resultClass: Class<E>, prop: KProperty1<E, NUM>, page: Page = Page(),
+    fun <E : Any, NUM> pagesSorted(clz: Class<E>, resultClass: Class<E>, prop: KProperty1<E, NUM>, KPage: KPage = KPage(),
                                    query: (KRoot<E>.(KRoot<E>) -> KSelect<E>)
-    ): PagesResult<E> where NUM : Number, NUM : Comparable<NUM> {
+    ): KPagesResult<E> where NUM : Number, NUM : Comparable<NUM> {
 
-        return object : PagesResult<E>(page.pageSize) {
-            var currentpage = page;
+        return object : KPagesResult<E>(KPage.pageSize) {
+            var currentpage = KPage;
             var num: NUM? = null;
 
             override fun beforeForeach() {
-                currentpage = page
+                currentpage = KPage
                 num = null
             }
 
@@ -318,7 +318,7 @@ class AnyDao(val em: EntityManager) {
 
     companion object {
         @JvmStatic
-        fun <E : Any, RESULT : Any> getPredicate(root: Root<E>, criteriaQuery: CriteriaQuery<*>, cb: CriteriaBuilder,
+        fun <E : Any, RESULT> getPredicate(root: Root<E>, criteriaQuery: CriteriaQuery<*>, cb: CriteriaBuilder,
                                                  query: KRoot<E>.(KRoot<E>) -> KSelect<RESULT>): Predicate {
             val pc = PredicatePathContext(root as Root<Any>, criteriaQuery, cb);
             return pc.toPredicate(query)

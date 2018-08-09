@@ -41,7 +41,6 @@ open class PathWrap<E, G> constructor(
         return this
     }
 
-
     infix fun <F> select(pw: KProperty1<E, F>): SelectWrap<F> {
         return select(get(pw))
     }
@@ -54,6 +53,10 @@ open class PathWrap<E, G> constructor(
         return pw.getDirectSelection()
     }
 
+
+    infix fun <F> selectNullable(pw: ExpressionWrap<F, G>): SelectWrap<F?> {
+        return pw.getDirectSelection() as SelectWrap<F?>
+    }
 
     fun <F, G> select(pw1: ISelectExpressionProvider<F>, pw2: ISelectExpressionProvider<G>): com.kameocode.anydao.AnyDao.PathPairSelect<F, G> {
         return com.kameocode.anydao.AnyDao.PathPairSelect(pw1.getDirectSelection(), pw2.getDirectSelection(), false, pc.cb)

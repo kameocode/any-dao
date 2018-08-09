@@ -77,11 +77,11 @@ Add to your project maven/gradle dependency:
 <dependency>
     <groupId>com.kameocode</groupId>
     <artifactId>any-dao</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 ```
-compile 'com.kameocode:any-dao:1.0.1'
+compile 'com.kameocode:any-dao:1.0.2'
 ```
 Create instance of AnyDao:
 ```
@@ -276,7 +276,7 @@ These expressions should be accessible directly on expression/path elements:
 
 > Paging
 ```
-    val pagedListOfUsers = anyDao.pages(UserODB::class, Page(100)) { 
+    val pagedListOfUsers = anyDao.pages(UserODB::class, KPage(100)) { 
         it[UserODB::email] like "email1" 
     }
     pagedListOfUsers.forEach { list->
@@ -322,3 +322,4 @@ For more examples, see: [tests](src/test/kotlin/com/kameocode/anydao/test/)
 
 **v 1.0.2**
 * Support for nullable select
+* Page is now KPage 

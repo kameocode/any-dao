@@ -61,7 +61,7 @@ class QueryPathContext<G>(clz: Class<*>,
 
 
 
-    fun <RESULT : Any> mapToPluralsIfNeeded(res: RESULT): RESULT {
+    fun <RESULT> mapToPluralsIfNeeded(res: RESULT): RESULT {
         if (selector is com.kameocode.anydao.AnyDao.PathArraySelect ) {
             return res;
         }
@@ -82,7 +82,7 @@ class QueryPathContext<G>(clz: Class<*>,
         return res
     }
 
-    fun <RESULT : Any> mapToPluralsIfNeeded(res: List<RESULT>): List<RESULT> {
+    fun <RESULT> mapToPluralsIfNeeded(res: List<RESULT>): List<RESULT> {
         if (selector is com.kameocode.anydao.AnyDao.PathArraySelect) {
             return res;
         }
