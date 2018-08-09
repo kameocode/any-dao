@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/kameocode/any-dao.svg?branch=master)](https://travis-ci.org/kameocode/any-dao)
 [![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Maven central](https://maven-badges.herokuapp.com/maven-central/com.kameocode/any-dao/badge.svg)](http://repo1.maven.org/maven2/com/kameocode/any-dao/1.0.0/)
+[![Maven central](https://maven-badges.herokuapp.com/maven-central/com.kameocode/any-dao/badge.svg)](http://repo1.maven.org/maven2/com/kameocode/any-dao/1.0.2/)
 # AnyDao #
 
 AnyDao is a [Kotlin](http://www.kotlinlang.org/) JPA (Java Persistence Api) wrapper library which makes your queries short, 
