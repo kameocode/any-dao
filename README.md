@@ -118,7 +118,7 @@ If fields are private (or entities were written in plain java),
 use getter references instead of property references: 
 (`UserODB::getEmail` instead of `UserODB::email`)
 
-You can also assign paths and expressionsó to variables and reference them later:
+You can also assign paths and expressions to variables and reference them later:
 ```
     val listOfUsers = anyDao.all(UserODB::class) {
         val taskName = it[UserODB::task, TaskODB::name]
